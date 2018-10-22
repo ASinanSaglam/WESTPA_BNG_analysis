@@ -1,25 +1,27 @@
-import IPython, os, sys
+import IPython, os, sys, h5py
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import itertools as itt
-import h5py, copy
-import numpy.ma as ma
 import assignment as asgn
 import voronoi_plot as vp
 
 # TODO: Turn this into a tool that handles the pdist'ing 
+# TODO: Add argparse instead of primitive parsing using argv, it's gotten too large for that 
 def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, voronoi=False):
+    # See if we are given options, assume some defaults otherwise
     if not h5file:
         h5file = "../west.h5"
     if not mapper_iter:
         h5 = h5py.File(h5file, 'r')
         mapper_iter = h5.attrs['west_current_iteration'] - 1 
 
+    # Load in mapper from the iteration given/found
     print("Loading file {}, mapper from iteration {}".format(h5file, mapper_iter))
     mapper = asgn.load_mapper(h5file, mapper_iter)
     cur_path = os.getcwd()
 
+    # Setup the figure and names for each dimension
     plt.figure(figsize=(20,20))
     f, axarr = plt.subplots(12,12)
     f.suptitle("%i - %i"%(iiter+1, fiter+1))
@@ -27,25 +29,32 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
     names = {0: "STAT", 1: "GBX2", 2: "KLF4", 3: "KLF2",
              4: "SALL", 5: "OCT4", 6: "SOX2", 7: "NANO",
              8: "ESRR", 9: "TFCP", 10:"TCF3", 11:"MEKE"}
-    ymin, ymax = None, None
+
     print("Plotting")
     if voronoi: 
-        print("Plotting voronoi centers")
+        print("Plotting voronoi centers on top")
+
+    # Loop over every dimension vs every other dimension
+    # TODO: We could just not plot the lower triangle and 
+    # save time and simplify code
     for ii,jj in itt.product(range(12),range(12)):
-        #print("Plotting dimensions {} vs {}".format(ii,jj))
         inv = False
         fi, fj = ii+1, jj+1
 
+        # It's too messy to plot the spines and ticks for large dimensions
         for kw in ['top', 'right']:
             axarr[ii,jj].spines[kw].set_visible(False)
         axarr[ii,jj].tick_params(left=False, bottom=False)
     
+        # Set the names if we are there
         if ii == 11:
             # set x label
             axarr[ii,jj].set_xlabel(names[jj])
         if jj == 0:
             # set y label
             axarr[ii,jj].set_ylabel(names[ii], fontsize=8)
+
+        # Check what type of plot we want
         if fi == fj:
             # plotting the diagonal, 1D plots
             if fi != 12:
@@ -118,15 +127,6 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
             cmap.set_bad(color='white')
             cmap.set_over(color='white')
             cmap.set_under(color='white')
-            # Find min/max of histogram to return eventually
-            if ymin == None:
-                ymin = e_dist[np.isfinite(e_dist)].min()
-            if ymax == None:
-                ymax = e_dist[np.isfinite(e_dist)].max()
-            if e_dist.min() < ymin:
-                ymin = e_dist[np.isfinite(e_dist)].min()
-            if e_dist.min() < ymax:
-                ymax = e_dist[np.isfinite(e_dist)].max()
             
             # Plot the heatmap
             pcolormesh = axarr[ii,jj].pcolormesh(x_bins, y_bins,
@@ -170,7 +170,7 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
         outname = "all_{:05d}_{:05d}.png".format(iiter, fiter)
     plt.savefig(outname, dpi=600)
     plt.close()
-    return ymin, ymax
+    return
 
 if __name__ == "__main__":
     # Command line options
