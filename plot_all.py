@@ -8,6 +8,7 @@ import numpy.ma as ma
 import assignment as asgn
 import voronoi_plot as vp
 
+# TODO: Turn this into a tool that handles the pdist'ing 
 def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, voronoi=False):
     if not h5file:
         h5file = "../west.h5"
@@ -48,32 +49,37 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
         if fi == fj:
             # plotting the diagonal, 1D plots
             if fi != 12:
+                # First pull a file that contains the dimension
                 pfile = os.path.join(cur_path, "pdist_{}_{}.h5".format(fi,12))
-                #print(pfile)
                 datFile = h5py.File(pfile, 'r')
                 Hists = datFile['histograms'][iiter:fiter]
+                # Get average and average the other dimension
                 Hists = Hists.mean(axis=0)
                 Hists = Hists.mean(axis=1)
             else:
+                # We just need one that contains the last dimension
                 pfile = os.path.join(cur_path, "pdist_{}_{}.h5".format(1,12))
-                #print(pfile)
                 datFile = h5py.File(pfile, 'r')
                 Hists = datFile['histograms'][iiter:fiter]
+                # Average the correct dimension here
                 Hists = Hists.mean(axis=0)
                 Hists = Hists.mean(axis=0)
 
+            # Normalize the distribution, take -ln, zero out minimum point
             Hists = Hists/(Hists.flatten().sum())
             Hists = -np.log(Hists)
             Hists = Hists - Hists.min()
-            y_bins = datFile['binbounds_0'][...]
-            
-            y_mids = np.array([ (y_bins[i]+y_bins[i+1])/2.0 for i in range(len(y_bins)-1)] )
-            y_mids = y_mids/y_mids.max()
+
+            # Calculate the x values, normalize s.t. it spans 0-1
+            x_bins = datFile['binbounds_0'][...]
+            x_mids = np.array([ (x_bins[i]+x_bins[i+1])/2.0 for i in range(len(x_bins)-1)] )
+            x_mids = x_mids/x_mids.max()
       
-            axarr[ii,jj].plot(y_mids, Hists, label="{} {}".format(fi,fj))
+            # Plot on the correct ax, set x limit
+            axarr[ii,jj].plot(x_mids, Hists, label="{} {}".format(fi,fj))
             axarr[ii,jj].set_xlim(0.0, 1.0)
         else:
-            # Plotting off diagonal, plotting 2D heatmaps
+            # Plotting off-diagonal, plotting 2D heatmaps
             if fi < fj:
                 pfile = os.path.join(cur_path, "pdist_{}_{}.h5".format(fi,fj))
                 inv = False
@@ -107,10 +113,12 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
                 e_dist = e_dist.T
                 x_bins, y_bins = y_bins, x_bins
             
+            # Set certain values to white to avoid distractions
             cmap = mpl.cm.magma_r
             cmap.set_bad(color='white')
             cmap.set_over(color='white')
             cmap.set_under(color='white')
+            # Find min/max of histogram to return eventually
             if ymin == None:
                 ymin = e_dist[np.isfinite(e_dist)].min()
             if ymax == None:
@@ -119,27 +127,40 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
                 ymin = e_dist[np.isfinite(e_dist)].min()
             if e_dist.min() < ymax:
                 ymax = e_dist[np.isfinite(e_dist)].max()
+            
+            # Plot the heatmap
             pcolormesh = axarr[ii,jj].pcolormesh(x_bins, y_bins,
-                           e_dist.T, cmap=cmap, vmin=0.0, vmax=10.0)
+                           e_dist, cmap=cmap, vmin=0.0, vmax=10.0)
+
+            # Set x/y limits
             axarr[ii,jj].set_xlim(0.0, 1.0)
             axarr[ii,jj].set_ylim(0.0, 1.0)
-            # Plot vornoi bins
+
+            # Plot vornoi bins if asked
             if voronoi:
+                # Get centers from mapper
                 X = mapper.centers[:,ii]
                 Y = mapper.centers[:,jj]
+
+                # Normalize to 1
                 X = X/x_max
                 Y = Y/y_max
+
+                # Ensure not all X/Y values are 0
                 if not ((X==0).all() or (Y==0).all()):
+                    # First plot the centers
                     axarr[ii,jj].scatter(Y,X, s=0.1)
+
+                    # Now get line segments
                     segments = vp.voronoi(Y,X)
                     lines = mpl.collections.LineCollection(segments, color='0.75', lw=0.15)
+                    
+                    # Plot line segments
                     axarr[ii,jj].add_collection(lines)
                     axarr[ii,jj].ticklabel_format(style='sci')
     
-    #for i in range(1,8):
     for i in range(0,12):
         plt.setp([a.get_yticklabels() for a in axarr[:,i]], visible=False)
-    #for i in range(0,7):
     for i in range(0,12):
         plt.setp([a.get_xticklabels() for a in axarr[i,:]], visible=False)
     
@@ -152,6 +173,7 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
     return ymin, ymax
 
 if __name__ == "__main__":
+    # Command line options
     h5file = sys.argv[1]
     start_iter = int(sys.argv[2])
     end_iter = int(sys.argv[3])
