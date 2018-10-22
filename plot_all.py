@@ -5,15 +5,18 @@ import numpy as np
 import itertools as itt
 import h5py, copy
 import numpy.ma as ma
-import assignment as ass
+import assignment as asgn
 import voronoi_plot as vp
 
-def plot_in_between(iiter, fiter, h5file=None):
-    if h5file:
-        mapper = ass.load_mapper(h5file, 38)
-    else:
+def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None):
+    if not h5file:
         h5file = "../west.h5"
-        mapper = ass.load_mapper(h5file, 38)
+    if not mapper_iter:
+        h5 = h5py.File(h5file, 'r')
+        mapper_iter = h5.attrs['west_current_iteration'] - 1 
+
+    print("Loading file {}, mapper from iteration {}".format(h5file, mapper_iter))
+    mapper = asgn.load_mapper(h5file, mapper_iter)
     cur_path = os.getcwd()
 
     plt.figure(figsize=(20,20))
@@ -50,8 +53,7 @@ def plot_in_between(iiter, fiter, h5file=None):
                 Hists = Hists.mean(axis=0)
                 Hists = Hists.mean(axis=1)
             else:
-                pfile = 
-                os.path.join(cur_path, "/pdist_%i_%i.h5"%(1,12))
+                pfile = os.path.join(cur_path, "pdist_%i_%i.h5"%(1,12))
                 #print(pfile)
                 datFile = h5py.File(pfile, 'r')
                 Hists = datFile['histograms'][iiter:fiter]
@@ -151,6 +153,6 @@ def plot_in_between(iiter, fiter, h5file=None):
 #for i in range(0,1450):
 #    print(i)
 #    plot_in_between(i, i+50)
-if __main__ == "__name__":
+if __name__ == "__main__":
     h5file = sys.argv[1]
     plot_in_between(0, 38, h5file=h5file)

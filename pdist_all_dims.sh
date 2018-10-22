@@ -10,7 +10,7 @@
 for i in $(seq 1 12); do
   for j in $(seq $i 12);do
     if [ $i != $j ];then
-      echo "$i $j" 
+      echo "Working on dimensions $i and $j" 
       echo "$i $j" > data_to_pull.txt
       w_pdist -W $1 -o pdist_$i_$j.h5 -b 100 --construct-dataset assignment.pull_data
     fi
