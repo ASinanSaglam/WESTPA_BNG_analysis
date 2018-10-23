@@ -11,7 +11,6 @@ import voronoi_plot as vp
 import warnings 
 warnings.filterwarnings("ignore")
 
-# TODO: Turn this into a tool that handles the pdist'ing 
 class HighDimPlotter:
     def __init__(self, h5file="../west.h5", mapper_iter=None, outext=None, names=None):
         # TODO Work on getting argparse in here
@@ -81,9 +80,10 @@ class HighDimPlotter:
         return 
 
     def open_pdist_file(self, fdim, sdim):
+        # TODO: Rewrite so that it uses w_pdist directly and we can avoid using
+        # --construct-dataset and remove the dependency on assignment.py here
         pfile = os.path.join(self.work_path, "pdist_{}_{}.h5".format(fdim, sdim))
-        # We probably want to hook into w_pdist here really but for now 
-        # let's just get it working
+        # for now let's just get it working
         try:
             open_file = h5py.File(pfile, 'r')
             return open_file

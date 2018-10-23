@@ -163,6 +163,8 @@ class wrapped_mapper(NopMapper):
 
 def pull_weight(n_iter, iter_group):
     '''
+    Custom weight puller for a custom version of w_pdist. 
+    This will probably eventually make it into the main repo
     '''
     #import sys, h5py
     #import numpy as np
