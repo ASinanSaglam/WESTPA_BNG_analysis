@@ -82,11 +82,11 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
             # Calculate the x values, normalize s.t. it spans 0-1
             x_bins = datFile['binbounds_0'][...]
             x_mids = np.array([ (x_bins[i]+x_bins[i+1])/2.0 for i in range(len(x_bins)-1)] )
-            x_mids = x_mids/x_mids.max()
+            x_mids = x_mids/x_bins.max()
       
             # Plot on the correct ax, set x limit
-            axarr[ii,jj].plot(x_mids, Hists, label="{} {}".format(fi,fj))
             axarr[ii,jj].set_xlim(0.0, 1.0)
+            axarr[ii,jj].plot(x_mids, Hists, label="{} {}".format(fi,fj))
         else:
             # Plotting off-diagonal, plotting 2D heatmaps
             if fi < fj:
@@ -127,14 +127,14 @@ def plot_in_between(iiter, fiter, h5file=None, mapper_iter=None, outext=None, vo
             cmap.set_bad(color='white')
             cmap.set_over(color='white')
             cmap.set_under(color='white')
-            
-            # Plot the heatmap
-            pcolormesh = axarr[ii,jj].pcolormesh(x_bins, y_bins,
-                           e_dist, cmap=cmap, vmin=0.0, vmax=10.0)
 
             # Set x/y limits
             axarr[ii,jj].set_xlim(0.0, 1.0)
             axarr[ii,jj].set_ylim(0.0, 1.0)
+            
+            # Plot the heatmap
+            pcolormesh = axarr[ii,jj].pcolormesh(x_bins, y_bins,
+                           e_dist, cmap=cmap, vmin=0.0, vmax=10.0)
 
             # Plot vornoi bins if asked
             if voronoi:
