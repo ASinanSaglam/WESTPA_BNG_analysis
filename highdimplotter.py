@@ -1,4 +1,4 @@
-import IPython, os, sys, h5py
+import IPython, os, sys, h5py, argparse
 import subprocess as sbpc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -12,67 +12,143 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class HighDimPlotter:
-    def __init__(self, h5file="../west.h5", mapper_iter=None, outext=None, names=None):
-        # TODO Work on getting argparse in here
+    def __init__(self):
+        # Let's parse cmdline arguments
+        self._parse_args()
+        # Once the arguments are parsed, do a few prep steps, opening h5file
+        self.h5file_path = self.args.h5file_path
+        self.h5file = h5py.File(self.args.h5file_path, 'r')
+        # We can determine an iteration to pull the mapper from ourselves
+        self.get_mapper(self.args.mapper_iter)
+        # Set names if we have them
+        self.set_names(self.args.names)
+        # Set the dimensionality 
+        self.set_dims(self.args.dims)
+        # Set work path
+        self.work_path = self.args.work_path
+        # Voronoi or not
+        self.voronoi = self.args.voronoi
+        # iterations
+        self.iiter, self.fiter = self.set_iter_range(self.args.iiter, self.args.fiter)
+        # output name
+        self.outname = self.args.outname
 
-        # Absolutely needed
-        self.h5file_path = h5file
-        # open the file itself
-        self.h5file = h5py.File(self.h5file_path, 'r')
+    def _parse_args(self):
+        parser = argparse.ArgumentParser()
 
-        # We can determine an iteration to pull the mapper from
-        # ourselves
-        if not mapper_iter:
+        # Data input options
+        parser.add_argument('-W', '--westh5',
+                            dest='h5file_path',
+                            default="west.h5",
+                            help='Path to the WESTPA h5 file', 
+                            type=str)
+
+        parser.add_argument('--mapper-iter',
+                            dest='mapper_iter', default=None,
+                            help='Iteration to pull the bin mapper from',
+                            type=int)
+
+        parser.add_argument('--work-path',
+                            dest='work_path', default=os.getcwd(),
+                            help='Path to do our work in, save figs, the pdist files etc.',
+                            type=str)
+
+        parser.add_argument('--name-dict',
+                            dest='names',
+                            default=None,
+                            help='Text file containing the names of each dimension separated by spaces',
+                            type=str)
+
+        parser.add_argument('--do-voronoi',
+                            dest='voronoi', action='store_true', default=False,
+                            help='Does voronoi centers if argument given')
+
+        parser.add_argument('--first-iter', default=None,
+                          dest='iiter',
+                          help='Plot data starting at iteration FIRST_ITER. '
+                               'By default, plot data starting at the first ' 
+                               'iteration in the specified w_pdist file. ',
+                          type=int)
+
+        parser.add_argument('--last-iter', default=None,
+                          dest='fiter',
+                          help='Plot data up to and including iteration '
+                               'LAST_ITER. By default, plot data up to and '
+                               'including the last iteration in the specified ',
+                          type=int)
+
+        # TODO Support a list of dimensions instead
+        parser.add_argument('--dimensions', default=None,
+                          dest='dims',
+                          help='Number of dimensions to plot, at the moment a'
+                                'list of dimensions is not supported',
+                          type=int)
+
+        parser.add_argument('--outname', default=None,
+                          dest='outname',
+                          help='Name of the output file, extension determines the format',
+                          type=str)
+
+        self.args = parser.parse_args()
+
+    def get_mapper(self, mapper_iter):
+        # Gotta fix this behavior
+        if mapper_iter is None:
             mapper_iter = self.h5file.attrs['west_current_iteration'] - 1
-        self.mapper_iter = mapper_iter
-
         # Load in mapper from the iteration given/found
-        print("Loading file {}, mapper from iteration {}".format(h5file, mapper_iter))
-        self.mapper = asgn.load_mapper(self.h5file_path, self.mapper_iter)
-
-        # Let's set the default behavior to work on the current path for now
-        self.work_path = os.getcwd()
-
-        # Let's setup names for ourselves, we don't know dim rn so we can't setup a default
-        self.names = names
-
-        # Do we need an extension?
-        self.outext = outext
+        print("Loading file {}, mapper from iteration {}".format(self.args.h5file_path, mapper_iter))
+        # We have to rewrite this behavior to always have A mapper from somewhere
+        # and warn the user appropriately, atm this is very shaky
+        try:
+            self.mapper = asgn.load_mapper(self.args.h5file_path, mapper_iter)
+        except:
+            self.mapper = asgn.load_mapper(self.args.h5file_path, mapper_iter-1)
 
     def set_dims(self, dims=None):
-        if not dims:
+        if dims is None:
             dims = self.h5file['iterations/iter_{:08d}'.format(1)]['pcoord'].shape[2]
         self.dims = dims
         
         # We now know the dimensionality, can assume a 
         # naming scheme if we don't have one
-        if not self.names:
+        if self.names is None:
+            print("Giving default names to each dimension")
             self.names = dict( (i, str(i)) for i in range(dims) )
 
         # return the dimensionality if we need to 
         return self.dims
 
-    def setup_figure(self, dims=None):
-        self.set_dims(dims)
+    def set_names(self, name_file):
+        print("Loading names from file {}".format(name_file))
+        if name_file is not None:
+            f = open(name_file, 'r')
+            n = f.readline()
+            f.close()
+            names = n.split()
+            self.names = dict( zip(range(len(names)), names) )
+        else:
+            self.names = None
+
+    def set_iter_range(self, iiter, fiter):
+        if iiter is None:
+            iiter = 0
+        if fiter is None:
+            fiter = self.h5file.attrs['west_current_iteration'] - 1
+
+        return iiter, fiter 
+
+    def setup_figure(self):
         # Setup the figure and names for each dimension
         plt.figure(figsize=(20,20))
         f, axarr = plt.subplots(self.dims,self.dims)
         return f, axarr
 
-    def save_fig(self, ext=None, iiter=None, fiter=None):
-        # passed extension overwrites default
-        if ext:
-            outext = ext
-        elif self.outext:
-            outext = self.outext
-        else:
-            outext = None
-
+    def save_fig(self):
         # setup our output filename
-        if outext:
-            outname = "all_{:05d}_{:05d}_{}.png".format(iiter, fiter, outext)
+        if self.outname is not None:
+            outname = self.outname
         else:
-            outname = "all_{:05d}_{:05d}.png".format(iiter, fiter)
+            outname = "all_{:05d}_{:05d}.png".format(self.iiter, self.fiter)
 
         # save the figure
         plt.savefig(outname, dpi=600)
@@ -103,14 +179,11 @@ class HighDimPlotter:
             open_file = h5py.File(pfile, 'r')
             return open_file
             
-    def plot(self, iiter=None, fiter=None, voronoi=False, ext=None):
-        if not iiter:
-            iiter = 0
-        if not fiter:
-            fiter = self.h5file.attrs['west_current_iteration'] - 1
+    def plot(self, ext=None):
+        iiter, fiter = self.iiter, self.fiter
 
         f, axarr = self.setup_figure()
-        f.suptitle("%i - %i"%(iiter+1, fiter+1))
+        f.suptitle("Averaged between %i - %i"%(iiter+1, fiter+1))
         f.subplots_adjust(hspace=0.4, wspace=0.4, bottom=0.1, left=0.1)
         # Loop over every dimension vs every other dimension
         # TODO: We could just not plot the lower triangle and 
@@ -214,7 +287,7 @@ class HighDimPlotter:
                                e_dist, cmap=cmap, vmin=0.0, vmax=10.0)
 
                 # Plot vornoi bins if asked
-                if voronoi:
+                if self.voronoi:
                     # Get centers from mapper
                     X = self.mapper.centers[:,ii]
                     Y = self.mapper.centers[:,jj]
@@ -241,15 +314,10 @@ class HighDimPlotter:
         for i in range(0,12):
             plt.setp([a.get_xticklabels() for a in axarr[i,:]], visible=False)
 
-        self.save_fig(ext=ext, iiter=iiter, fiter=fiter)
+        self.save_fig()
         return
 
 if __name__ == "__main__":
-    names = {0: "STAT", 1: "GBX2", 2: "KLF4", 3: "KLF2",
-             4: "SALL", 5: "OCT4", 6: "SOX2", 7: "NANO",
-             8: "ESRR", 9: "TFCP", 10:"TCF3", 11:"MEKE"}
     # Get the regular plot
-    hdp = HighDimPlotter(h5file="west.h5", names=names)
+    hdp = HighDimPlotter()
     hdp.plot()
-    # Add voronoi centers
-    hdp.plot(ext="vor", voronoi=True)
