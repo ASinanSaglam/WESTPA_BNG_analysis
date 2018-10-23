@@ -12,18 +12,11 @@ class wrapped_clusterer(NopMapper):
         self.nbins = 4
         
     def assign(self, coords, mask=None, output=None):
-        #print("In .assign")
-        #print("coordinates")
-        #print(coords, coords.shape)
-
         assigned = np.array(self.predictor.predict(coords), dtype=index_dtype)
         try:
             output[...] = assigned[...]
-            #print(output, output.shape)
         except:
             pass
-        #print("assigned")
-        #print(assigned, assigned.shape)
 
         return assigned 
 
@@ -71,26 +64,23 @@ def assign_cluster():
     WClusterer = wrapped_clusterer(clusterer)
     return WClusterer
 
-def load_mapper(file_name, iter_no):
-    import h5py, pickle, IPython
-    h = h5py.File(file_name, 'r')
-    #hashval = 
-    topol_grp = h['bin_topologies']
+def load_mapper(h, iter_no):
+    import pickle
 
+    topol_grp = h['bin_topologies']
+    hashval = h['iterations/iter_{:08d}'.format(iter_no)].attrs['binhash']
     index = topol_grp['index']
     pickles = topol_grp['pickles']
     n_entries = len(index)
 
     chunksize = 256
     istart = iter_no - 1
-    #for istart in range(0, n_entries, chunksize):
-    chunk = index[istart:min(istart+chunksize, n_entries)]
-        #for i in range(len(chunk)):
-    i = 0
-            #if chunk[i]['hash'] == hashval:
-    pkldat = bytes(pickles[istart+i, 0:chunk[i]['pickle_len']].data)
-    mapper = pickle.loads(pkldat)
-    #IPython.embed()
+    for istart in range(0, n_entries, chunksize):
+        chunk = index[istart:min(istart+chunksize, n_entries)]
+        for i in range(len(chunk)):
+            if chunk[i]['hash'] == hashval:
+                pkldat = bytes(pickles[istart+i, 0:chunk[i]['pickle_len']].data)
+                mapper = pickle.loads(pkldat)
     return mapper
 
 

@@ -100,9 +100,9 @@ class HighDimPlotter:
         # We have to rewrite this behavior to always have A mapper from somewhere
         # and warn the user appropriately, atm this is very shaky
         try:
-            self.mapper = asgn.load_mapper(self.args.h5file_path, mapper_iter)
+            self.mapper = asgn.load_mapper(self.h5file, mapper_iter)
         except:
-            self.mapper = asgn.load_mapper(self.args.h5file_path, mapper_iter-1)
+            self.mapper = asgn.load_mapper(self.h5file, mapper_iter-1)
 
     def set_dims(self, dims=None):
         if dims is None:
