@@ -1,4 +1,5 @@
-import IPython, os, sys, h5py, argparse
+import os, sys, h5py, argparse
+import scipy.ndimage
 import subprocess as sbpc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -6,11 +7,15 @@ import numpy as np
 import itertools as itt
 import assignment as asgn
 import voronoi_plot as vp
+#from 
 
 # Hacky way to disable warnings so we can focus on important stuff
 import warnings 
 warnings.filterwarnings("ignore")
 
+# TODO: Separate out the pdisting, use native code
+# TODO: Hook into native code to decouple some parts like # of dimensions etc.
+# we need the system.py anyway, let's use native code to read CFG file
 class HighDimPlotter:
     def __init__(self):
         # Let's parse cmdline arguments
@@ -20,10 +25,10 @@ class HighDimPlotter:
         self.h5file = h5py.File(self.args.h5file_path, 'r')
         # We can determine an iteration to pull the mapper from ourselves
         self.get_mapper(self.args.mapper_iter)
-        # Set names if we have them
-        self.set_names(self.args.names)
         # Set the dimensionality 
         self.set_dims(self.args.dims)
+        # Set names if we have them
+        self.set_names(self.args.names)
         # Set work path
         self.work_path = self.args.work_path
         # Voronoi or not
@@ -32,6 +37,8 @@ class HighDimPlotter:
         self.iiter, self.fiter = self.set_iter_range(self.args.iiter, self.args.fiter)
         # output name
         self.outname = self.args.outname
+        # data smoothing
+        self.data_smoothing_level = self.args.data_smoothing
 
     def _parse_args(self):
         parser = argparse.ArgumentParser()
@@ -84,10 +91,17 @@ class HighDimPlotter:
                                 'list of dimensions is not supported',
                           type=int)
 
-        parser.add_argument('--outname', default=None,
+        parser.add_argument('-o', '--outname', default=None,
                           dest='outname',
                           help='Name of the output file, extension determines the format',
                           type=str)
+
+        parser.add_argument('--smooth-data', default = None, 
+                            dest='data_smoothing',
+                            help='Smooth data (plotted as histogram or contour'
+                                 ' levels) using a gaussian filter with sigma='
+                                 'DATA_SMOOTHING_LEVEL.',
+                            type=float)
 
         self.args = parser.parse_args()
 
@@ -108,13 +122,6 @@ class HighDimPlotter:
         if dims is None:
             dims = self.h5file['iterations/iter_{:08d}'.format(1)]['pcoord'].shape[2]
         self.dims = dims
-        
-        # We now know the dimensionality, can assume a 
-        # naming scheme if we don't have one
-        if self.names is None:
-            print("Giving default names to each dimension")
-            self.names = dict( (i, str(i)) for i in range(dims) )
-
         # return the dimensionality if we need to 
         return self.dims
 
@@ -127,7 +134,10 @@ class HighDimPlotter:
             names = n.split()
             self.names = dict( zip(range(len(names)), names) )
         else:
-            self.names = None
+            # We know the dimensionality, can assume a 
+            # naming scheme if we don't have one
+            print("Giving default names to each dimension")
+            self.names = dict( (i, str(i)) for i in range(self.dims) )
 
     def set_iter_range(self, iiter, fiter):
         if iiter is None:
@@ -139,8 +149,10 @@ class HighDimPlotter:
 
     def setup_figure(self):
         # Setup the figure and names for each dimension
-        plt.figure(figsize=(20,20))
+        #plt.figure(figsize=(20,20))
+        plt.figure(figsize=(1.5,1.5))
         f, axarr = plt.subplots(self.dims,self.dims)
+        f.subplots_adjust(hspace=0.5, wspace=0.5, bottom=0.05, left=0.05, top=0.98, right=0.98)
         return f, axarr
 
     def save_fig(self):
@@ -151,6 +163,7 @@ class HighDimPlotter:
             outname = "all_{:05d}_{:05d}.png".format(self.iiter, self.fiter)
 
         # save the figure
+        print("Saving figure to {}".format(outname))
         plt.savefig(outname, dpi=600)
         plt.close()
         return 
@@ -183,12 +196,12 @@ class HighDimPlotter:
         iiter, fiter = self.iiter, self.fiter
 
         f, axarr = self.setup_figure()
-        f.suptitle("Averaged between %i - %i"%(iiter+1, fiter+1))
-        f.subplots_adjust(hspace=0.4, wspace=0.4, bottom=0.1, left=0.1)
+        #f.suptitle("Averaged between %i - %i"%(iiter+1, fiter+1))
         # Loop over every dimension vs every other dimension
         # TODO: We could just not plot the lower triangle and 
         # save time and simplify code
         for ii,jj in itt.product(range(self.dims),range(self.dims)):
+            print("Plotting {} vs {}".format((ii+1), (jj+1)))
             inv = False
             fi, fj = ii+1, jj+1
 
@@ -198,17 +211,19 @@ class HighDimPlotter:
             axarr[ii,jj].tick_params(left=False, bottom=False)
         
             # Set the names if we are there
-            if ii == 11:
+            if fi == self.dims:
                 # set x label
-                axarr[ii,jj].set_xlabel(self.names[jj])
-            if jj == 0:
+                axarr[ii,jj].set_xlabel(self.names[jj], fontsize=6)
+            if fj == 1:
                 # set y label
-                axarr[ii,jj].set_ylabel(self.names[ii], fontsize=8)
+                axarr[ii,jj].set_ylabel(self.names[ii], fontsize=6)
 
             # Check what type of plot we want
             if fi == fj:
+                # Set equal widht height
+                axarr[ii,jj].set(adjustable='box-forced', aspect='equal')
                 # plotting the diagonal, 1D plots
-                if fi != 12:
+                if fi != self.dims:
                     # First pull a file that contains the dimension
                     pfile = os.path.join(self.work_path, "pdist_{}_{}.h5".format(fi,self.dims))
                     datFile = self.open_pdist_file(fi, self.dims)
@@ -227,8 +242,9 @@ class HighDimPlotter:
 
                 # Normalize the distribution, take -ln, zero out minimum point
                 Hists = Hists/(Hists.flatten().sum())
-                Hists = -np.log(Hists)
-                Hists = Hists - Hists.min()
+                Hists = Hists/Hists.max()
+                #Hists = -np.log(Hists)
+                #Hists = Hists - Hists.min()
 
                 # Calculate the x values, normalize s.t. it spans 0-1
                 x_bins = datFile['binbounds_0'][...]
@@ -237,8 +253,11 @@ class HighDimPlotter:
           
                 # Plot on the correct ax, set x limit
                 axarr[ii,jj].set_xlim(0.0, 1.0)
+                axarr[ii,jj].set_ylim(0.0, 1.0)
                 axarr[ii,jj].plot(x_mids, Hists, label="{} {}".format(fi,fj))
             else:
+                # Set equal widht height
+                axarr[ii,jj].set(adjustable='box-forced', aspect='equal')
                 # Plotting off-diagonal, plotting 2D heatmaps
                 if fi < fj:
                     datFile = self.open_pdist_file(fi, fj)
@@ -253,8 +272,13 @@ class HighDimPlotter:
                 Hists = datFile['histograms'][iiter:fiter]
                 Hists = Hists.mean(axis=0)
                 Hists = Hists/(Hists.sum())
-                Hists = -np.log(Hists)
-                Hists = Hists - Hists.min()
+                #Hists = -np.log(Hists)
+                #Hists = Hists - Hists.min()
+                # Let's remove the nans and smooth
+                Hists[np.isnan(Hists)] = np.nanmax(Hists)
+                if self.data_smoothing_level is not None:
+                    Hists = scipy.ndimage.filters.gaussian_filter(Hists,
+                                      self.data_smoothing_level)
                 # pcolormesh takes in transposed matrices to get 
                 # the expected orientation
                 e_dist = Hists.T
@@ -284,7 +308,7 @@ class HighDimPlotter:
                 
                 # Plot the heatmap
                 pcolormesh = axarr[ii,jj].pcolormesh(x_bins, y_bins,
-                               e_dist, cmap=cmap, vmin=0.0, vmax=10.0)
+                               e_dist, cmap=cmap, vmin=1e-10) #, vmax=1.0)
 
                 # Plot vornoi bins if asked
                 if self.voronoi:
@@ -309,9 +333,9 @@ class HighDimPlotter:
                         axarr[ii,jj].add_collection(lines)
                         axarr[ii,jj].ticklabel_format(style='sci')
         
-        for i in range(0,12):
+        for i in range(0,self.dims):
             plt.setp([a.get_yticklabels() for a in axarr[:,i]], visible=False)
-        for i in range(0,12):
+        for i in range(0,self.dims):
             plt.setp([a.get_xticklabels() for a in axarr[i,:]], visible=False)
 
         self.save_fig()
