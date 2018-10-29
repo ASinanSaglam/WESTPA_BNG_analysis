@@ -1,5 +1,5 @@
 import IPython
-import pickle, csn, h5py, sys
+import pickle, h5py, sys
 import numpy as np
 import networkx as nx
 import pyemma as pe 
