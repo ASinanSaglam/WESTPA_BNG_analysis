@@ -33,6 +33,8 @@ class HighDimPlotter:
         self.work_path = self.args.work_path
         # Voronoi or not
         self.voronoi = self.args.voronoi
+        # Plotting energies or not?
+        self.do_energy = self.args.do_energy
         # iterations
         self.iiter, self.fiter = self.set_iter_range(self.args.iiter, self.args.fiter)
         # output name
@@ -69,6 +71,10 @@ class HighDimPlotter:
         parser.add_argument('--do-voronoi',
                             dest='voronoi', action='store_true', default=False,
                             help='Does voronoi centers if argument given')
+
+        parser.add_argument('--do-energy',
+                            dest='do_energy', action='store_true', default=False,
+                            help='Plot -lnP instead of probabilities')
 
         parser.add_argument('--first-iter', default=None,
                           dest='iiter',
@@ -243,7 +249,8 @@ class HighDimPlotter:
                 # Normalize the distribution, take -ln, zero out minimum point
                 Hists = Hists/(Hists.flatten().sum())
                 Hists = Hists/Hists.max()
-                #Hists = -np.log(Hists)
+                if self.do_energy:
+                    Hists = -np.log(Hists)
                 #Hists = Hists - Hists.min()
 
                 # Calculate the x values, normalize s.t. it spans 0-1
@@ -276,6 +283,9 @@ class HighDimPlotter:
                 #Hists = Hists - Hists.min()
                 # Let's remove the nans and smooth
                 Hists[np.isnan(Hists)] = np.nanmax(Hists)
+                if self.do_energy:
+                    Hists = -np.log(Hists)
+                #Hists = Hists/Hists.max()
                 if self.data_smoothing_level is not None:
                     Hists = scipy.ndimage.filters.gaussian_filter(Hists,
                                       self.data_smoothing_level)
@@ -308,7 +318,7 @@ class HighDimPlotter:
                 
                 # Plot the heatmap
                 pcolormesh = axarr[ii,jj].pcolormesh(x_bins, y_bins,
-                               e_dist, cmap=cmap, vmin=1e-10) #, vmax=1.0)
+                                    e_dist, cmap=cmap, vmin=1e-10)
 
                 # Plot vornoi bins if asked
                 if self.voronoi:
