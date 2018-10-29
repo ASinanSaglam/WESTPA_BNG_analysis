@@ -152,7 +152,7 @@ class HighDimPlotter:
         #plt.figure(figsize=(20,20))
         plt.figure(figsize=(1.5,1.5))
         f, axarr = plt.subplots(self.dims,self.dims)
-        f.subplots_adjust(hspace=0.5, wspace=0.5, bottom=0.05, left=0.05, top=0.98, right=0.98)
+        f.subplots_adjust(hspace=0.4, wspace=0.4, bottom=0.05, left=0.05, top=0.98, right=0.98)
         return f, axarr
 
     def save_fig(self):
