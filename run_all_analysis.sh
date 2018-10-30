@@ -1,11 +1,17 @@
 WESTH5_FILE=$1
+# First check the probability distributions
+python highdimplotter.py -W west.h5 --name-dict full_names.txt -o LIF_slow.png --smooth-data 0.25 
+
+# Second let's do PCCA+ and get some states
 ## assignment first, need to assign to original voronoi bins
-#w_assign -W $WESTH5_FILE --states-from-file states_8dims.yaml || exit 1
-#mv assign.h5 assign_voronoi.h5
+w_assign -W $WESTH5_FILE --states-from-file states.yaml || exit 1
+mv assign.h5 assign_voronoi.h5
 ## then we need to calculate transition matrix
-#python make_transMat.py $WESTH5_FILE assign_voronoi.h5 curr_tm.npy || exit 1
+python transMatCalculator.py -W $WESTH5_FILE -A assign_voronoi.h5 -o curr_tm.npy || exit 1
 ## use PCCA+ to get the coarse grained system
 #python make_pcca.py curr_tm.npy assign_voronoi.h5 4 || exit 1
+
+## OLD STUFF ## 
 ## Get the pdist h5
 #echo "1 2" > data_to_pull.txt
 #w_pdist -W $WESTH5_FILE -o pdist_1_2.h5 -b 30 --construct-dataset assignment.pull_data #--construct-wdataset assignment.pull_weight
