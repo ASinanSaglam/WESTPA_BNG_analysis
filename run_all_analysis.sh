@@ -1,6 +1,8 @@
 WESTH5_FILE=$1
 # First check the probability distributions
 python highdimplotter.py -W west.h5 --name-dict full_names.txt -o LIF_slow.png --smooth-data 0.25 
+# TODO: We are going to need an equivalent tool to hdimplotter that does time evolution for checking
+# steady state stuff! 
 
 # Second let's do PCCA+ and get some states
 ## assignment first, need to assign to original voronoi bins
@@ -10,6 +12,8 @@ mv assign.h5 assign_voronoi.h5
 python transMatCalculator.py -W $WESTH5_FILE -A assign_voronoi.h5 -o curr_tm.npy || exit 1
 ## use PCCA+ to get the coarse grained system
 #python make_pcca.py curr_tm.npy assign_voronoi.h5 4 || exit 1
+
+# TODO: How to do halton seq stuff in this setup here?
 
 ## OLD STUFF ## 
 ## Get the pdist h5
