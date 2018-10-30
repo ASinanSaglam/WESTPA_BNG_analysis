@@ -1,6 +1,6 @@
 WESTH5_FILE=$1
 # First check the probability distributions
-python highdimplotter.py -W west.h5 --name-dict full_names.txt -o LIF_slow.png --smooth-data 0.25 
+python highdimplotter.py -W west.h5 --name-file full_names.txt -o LIF_slow.png --smooth-data 0.25 
 # TODO: We are going to need an equivalent tool to hdimplotter that does time evolution for checking
 # steady state stuff! 
 
@@ -14,7 +14,7 @@ mv assign.h5 assign_voronoi.h5
 ## then we need to calculate transition matrix
 python transMatCalculator.py -W $WESTH5_FILE -A assign_voronoi.h5 -o curr_tm.npy || exit 1
 ## use PCCA+ to get the coarse grained system
-#python make_pcca.py curr_tm.npy assign_voronoi.h5 4 || exit 1
+python clusterer.py -TM curr_tm.npy -A assign_voronoi.h5 --pcca-count 2 --name-file full_names.txt || exit 1
 
 # TODO: How to do halton seq stuff in this setup here?
 

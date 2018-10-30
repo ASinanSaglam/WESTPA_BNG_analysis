@@ -62,7 +62,7 @@ class HighDimPlotter:
                             help='Path to do our work in, save figs, the pdist files etc.',
                             type=str)
 
-        parser.add_argument('--name-dict',
+        parser.add_argument('--name-file',
                             dest='names',
                             default=None,
                             help='Text file containing the names of each dimension separated by spaces',
