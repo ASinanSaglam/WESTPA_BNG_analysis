@@ -114,6 +114,8 @@ class WEClusterer:
         self.print_pcca_results()
 
     def load_names(self):
+        '''
+        '''
         # TODO: OBJify
 
         if self.name_path is not None:
@@ -124,6 +126,8 @@ class WEClusterer:
             self.names = [str(i) for i in range(self.bin_labels.shape[1])]
 
     def load_bin_arrays(self):
+        '''
+        '''
         a = self.assignFile
         print("loading bin labels")
         bin_labels_str = a['bin_labels'][...]
@@ -141,6 +145,8 @@ class WEClusterer:
         self.bin_labels = bin_labels
 
     def save_mstable_assignments(self):
+        '''
+        '''
         # TODO: OBJify
         mstab_ass = self.mstable_assignments
         mstabs = []
@@ -154,11 +160,15 @@ class WEClusterer:
         self.save_full_mstabs()
 
     def save_full_mstabs(self):
+        '''
+        '''
         f = open(self.mstab_file, 'w')
         pickle.dump(self.full_mstabs, f)
         f.close()
 
     def print_mstable_states(self):
+        '''
+        '''
         self.load_bin_arrays()
         self.load_names()
         a = self.mstable_assignments
@@ -180,12 +190,17 @@ class WEClusterer:
             print
 
     def get_mstable_assignments(self):
+        '''
+        '''
         self.print_mstable_states()
         self.save_mstable_assignments()
 
     def run(self):
+        '''
+        '''
         self.cluster()
         self.get_mstable_assignments()
+
 
 if __name__ == '__main__':
     c = WEClusterer()
