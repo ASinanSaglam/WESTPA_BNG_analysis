@@ -1,3 +1,7 @@
+# Anything that uses bin mapper will need the system.py to be in the folder
+if [ ! -e system.py ];then
+  cp ../system.py .
+fi
 WESTH5_FILE=$1
 # First check the probability distributions
 python highdimplotter.py -W west.h5 --name-file full_names.txt -o LIF_slow.png --smooth-data 0.25 
