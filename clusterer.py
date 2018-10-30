@@ -3,6 +3,9 @@ import numpy as np
 import networkx as nx
 import pyemma as pe 
 
+# Hacky way to ignore warnings, in particular pyemma insists on Python3
+import warnings
+warnings.filterwarnings("ignore")
 np.set_printoptions(precision=2)
 
 class WEClusterer:
@@ -54,17 +57,19 @@ class WEClusterer:
                 self.tm[irow] /= row.sum() 
 
     def preprocess_tm(self):
-        zt = np.where(tm.sum(axis=1)==0)
+        zt = np.where(self.tm.sum(axis=1)==0)
         if len(zt[0]) != 0:
             print("there are bins where there are no transitions")
             print(zt)
             print("removing these bins from the transition matrix")
-        ind = np.where(tm.sum(axis=1)!=0)[0]
-        tm = tm[...,ind][ind,...]
+        ind = np.where(self.tm.sum(axis=1)!=0)[0]
+        self.z_inds = zt
+        self.nz_inds = ind
+        self.tm = self.tm[...,ind][ind,...]
         if self.symmetrize:
             print("symmetrizing transition matrix")
-            tm = (tm + tm.T)/2.0
-        row_normalize(tm)
+            self.tm = (self.tm + self.tm.T)/2.0
+        self.row_normalize()
 
     def print_pcca_results(self):
         print("MSM probs")
