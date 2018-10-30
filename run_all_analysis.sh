@@ -4,6 +4,9 @@ python highdimplotter.py -W west.h5 --name-dict full_names.txt -o LIF_slow.png -
 # TODO: We are going to need an equivalent tool to hdimplotter that does time evolution for checking
 # steady state stuff! 
 
+# TODO: We need a setup to find out our number of states!! Now is the time to implement a tool
+# for general clustering/dimensionality reduction techniques e.g. PCA
+
 # Second let's do PCCA+ and get some states
 ## assignment first, need to assign to original voronoi bins
 w_assign -W $WESTH5_FILE --states-from-file states.yaml || exit 1
@@ -22,7 +25,7 @@ python transMatCalculator.py -W $WESTH5_FILE -A assign_voronoi.h5 -o curr_tm.npy
 # Get -lnP plot with voronoi bins
 #python weighted_ensemble_tools/free_energy_contour_plotter.py --pdist-input pdist_1_2.h5 --first-iter 1 --xlabel "Protein A" --ylabel "Protein B" --plot-mode contourf_l --output a_b_vor.png --pdist-axes "(0,1)" --cmap "magma_r" --postprocess plotting.func #--smooth-data 1 --smooth-curves 1 #--xrange "(0,30)" --yrange "(0,30)" --zmax 10 --zmin 0 --zbins 10 
 #python weighted_ensemble_tools/free_energy_contour_plotter.py --pdist-input pdist_1_2.h5 --first-iter 1 --xlabel "Protein A" --ylabel "Protein B" --plot-mode contourf_l --output a_b_clust.png --pdist-axes "(0,1)" --cmap "magma_r" --postprocess plotting.func_ass #--smooth-data 1 --smooth-curves 1 #--xrange "(0,30)" --yrange "(0,30)" --zmax 10 --zmin 0 --zbins 10 
-python weighted_ensemble_tools/free_energy_contour_plotter.py --pdist-input pdist_7_8.h5 --first-iter 1 --xlabel "Protein A" --ylabel "Protein B" --plot-mode contourf_l --output a_b_basic.png --pdist-axes "(0,1)" --cmap "magma_r" --postprocess plotting.plot_basic #--smooth-data 1 --smooth-curves 1 #--xrange "(0,30)" --yrange "(0,30)" --zmax 10 --zmin 0 --zbins 10 
+#python weighted_ensemble_tools/free_energy_contour_plotter.py --pdist-input pdist_7_8.h5 --first-iter 1 --xlabel "Protein A" --ylabel "Protein B" --plot-mode contourf_l --output a_b_basic.png --pdist-axes "(0,1)" --cmap "magma_r" --postprocess plotting.plot_basic #--smooth-data 1 --smooth-curves 1 #--xrange "(0,30)" --yrange "(0,30)" --zmax 10 --zmin 0 --zbins 10 
 
 ### 
 # Assign to PCCA+ states

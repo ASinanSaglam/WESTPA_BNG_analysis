@@ -1,46 +1,92 @@
-import IPython
-import pickle, h5py, sys
+import pickle, h5py, sys, argparse
 import numpy as np
 import networkx as nx
 import pyemma as pe 
 
 np.set_printoptions(precision=2)
 
-tm_file = sys.argv[1]
-assign_file = sys.argv[2]
-pcca_cluster_count = sys.argv[3]
+class WEClusterer:
+    def __init__(self):
+        # Get arguments as usual
+        self._parse_args()
+        # Parse and set the arguments
+        # Open files 
+        self.assignFile = h5py.File(self.args.assign_path, 'r')
+        self.tm = np.load(self.args.trans_mat_file)
+        # Set assignments
+        self.assignments = self.assignFile['assignments']
+        # Cluster count
+        self.cluster_count = self.args.cluster_count
+        # Do we symmetrize
+        self.symmetrize = self.args.symmetrize
 
-tm = np.load(tm_file)
-zt = np.where(tm.sum(axis=1)==0)
-ind = np.where(tm.sum(axis=1)!=0)[0]
-tm = tm[...,ind][ind,...]
-tm = (tm + tm.T)/2.0
-#print("tm loaded")
-#print(tm)
-#print((tm < 0).any())
-def row_normalize(mat):
-    for irow, row in enumerate(mat):
-        if row.sum() != 0:
-            mat[irow] /= row.sum() 
-row_normalize(tm)
-#IPython.embed()
-#print("row normalized tm")
-#print(tm)
-#print((tm < 0).any())
-#mcsn = csn.CSN(tm, symmetrize=True)
-#rtm = mcsn.transmat.toarray()
-#print("symm tm")
-#print(tm)
-#print((tm < 0).any())
-MSM = pe.msm.MSM(tm, reversible=True)
-pcca = MSM.pcca(pcca_cluster_count)
-p = pcca.coarse_grained_stationary_probability
-ctm = pcca.coarse_grained_transition_matrix
-#print(ctm.sum(axis=1))
-print("MSM probs")
-print(p*100)
-print("MSM TM")
-print(ctm*100)
+    def _parse_args(self):
+        parser = argparse.ArgumentParser()
+
+        # Data input options
+        parser.add_argument('-TM', '--trans_mat',
+                            dest='trans_mat_file',
+                            default="tm.npy",
+                            help='Path to the numpy.loadable file that contains the'
+                            'transition matrix',
+                            type=str)
+        parser.add_argument('-A', '--assignh5',
+                            dest='assign_path',
+                            default="assign.h5",
+                            help='Path to the assignment h5 file', 
+                            type=str)
+        # Cluster count
+        parser.add_argument('--pcca-count', required=True,
+                          dest='cluster_count',
+                          help='Cluster count for the PCCA+ algorithm',
+                          type=int)
+
+        # Do we symmetrize the matrix?
+        parser.add_argument('--symmetrize-matrix',
+                            dest='symmetrize', action='store_true', default=False,
+                            help='Symmetrize matrix using (TM + TM.T)/2.0')
+
+        self.args = parser.parse_args()
+
+    def row_normalize(self):
+        for irow, row in enumerate(self.tm):
+            if row.sum() != 0:
+                self.tm[irow] /= row.sum() 
+
+    def preprocess_tm(self):
+        zt = np.where(tm.sum(axis=1)==0)
+        if len(zt[0]) != 0:
+            print("there are bins where there are no transitions")
+            print(zt)
+            print("removing these bins from the transition matrix")
+        ind = np.where(tm.sum(axis=1)!=0)[0]
+        tm = tm[...,ind][ind,...]
+        if self.symmetrize:
+            print("symmetrizing transition matrix")
+            tm = (tm + tm.T)/2.0
+        row_normalize(tm)
+
+    def print_pcca_results(self):
+        print("MSM probs")
+        print(self.p*100)
+        print("MSM TM")
+        print(self.ctm*100)
+
+    def cluster(self):
+        self.preprocess_tm()
+
+        self.MSM = pe.msm.MSM(self.tm, reversible=True)
+        self.pcca = self.MSM.pcca(self.cluster_count)
+        self.p = self.pcca.coarse_grained_stationary_probability
+        self.ctm = self.pcca.coarse_grained_transition_matrix
+        self.print_pcca_results()
+
+if __name__ == '__main__':
+    c = WEClusterer()
+    c.cluster()
+
+
+sys.exit()
 metastab_ass = pcca.metastable_assignment
 mstabs = []
 li = 0
