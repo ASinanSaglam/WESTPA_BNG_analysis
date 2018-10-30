@@ -2,6 +2,8 @@ import h5py, sys, argparse
 import numpy as np
 np.set_printoptions(precision=3)
 
+# TODO: Add logic to check assignment file and make sure it's up to date
+# TODO: Add logic to build an assingment file if it's not there?
 class TransMatCalculator:
     def __init__(self):
         # Get arguments first
