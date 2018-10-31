@@ -10,23 +10,21 @@ log = logging.getLogger(__name__)
 log.debug('loading module %r' % __name__)
 
 def dfunc(p, centers):
-    #print("Dfunc called")
-    #print(p, centers)
-    #print(p.shape, centers.shape)
     ds = cdist(np.array([p]),centers)
     return np.array(ds[0], dtype=p.dtype)
 
 class System(WESTSystem):
     def initialize(self):
-        self.pcoord_ndim = 8
-        self.pcoord_len = 2
+        self.pcoord_ndim = 12
+        self.pcoord_len = 2 
         self.pcoord_dtype = np.float32
-        nbins = 1
-        self.nbins = nbins
+        self.nbins = 1
 
         centers = np.zeros((self.nbins,self.pcoord_ndim),dtype=self.pcoord_dtype)
-        centers[:,:] = 1
+        # Using the values from the inital point
+        i = np.loadtxt('bngl_conf/init.gdat')
+        centers[0] = i[4:]
 
         self.bin_mapper = VoronoiBinMapper(dfunc, centers)
         self.bin_target_counts = np.empty((self.bin_mapper.nbins,), np.int)
-        self.bin_target_counts[...] = 50
+        self.bin_target_counts[...] = 20

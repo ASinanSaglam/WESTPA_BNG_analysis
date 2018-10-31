@@ -81,6 +81,8 @@ class TransMatCalculator:
     def init_matrix(self):
         '''
         '''
+
+        print("Total number of bins is {}".format(self.assignFile['bin_labels'].shape[0]))
         tm_s = self.assignFile['bin_labels'].shape[0]
         tm = np.zeros((tm_s, tm_s))
         return tm
@@ -101,6 +103,7 @@ class TransMatCalculator:
         '''
         '''
         tm = self.init_matrix()
+        max_assign = tm.shape[0]
         iiter, fiter = self.set_iter_range(self.first_iter, self.last_iter)
 
         ctr = 0
@@ -117,8 +120,10 @@ class TransMatCalculator:
                     parent = parents[iwalk]
                     weight = weights[iwalk]
                     prev_ass = ass[parent] 
-                    tm[walk[0]][walk[1]] += weight
-                    tm[prev_ass[1]][walk[0]] += weight
+                    if walk[0] < max_assign and walk[1] < max_assign: 
+                        tm[walk[0]][walk[1]] += weight
+                    if prev_ass[1] < max_assign and walk[0] < max_assign: 
+                        tm[prev_ass[1]][walk[0]] += weight
 
         tm /= ctr
         print(tm.sum(axis=1))
