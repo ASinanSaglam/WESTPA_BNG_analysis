@@ -95,6 +95,7 @@ class WEClusterer:
     def print_pcca_results(self):
         '''
         '''
+        print("##### Clustering results #####")
         print("MSM probs")
         print(self.p*100)
         print("MSM TM")
@@ -103,6 +104,7 @@ class WEClusterer:
     def cluster(self):
         '''
         '''
+        print("##### Clustering #####")
         self.preprocess_tm()
 
         self.MSM = pe.msm.MSM(self.tm, reversible=True)
@@ -169,6 +171,7 @@ class WEClusterer:
     def print_mstable_states(self):
         '''
         '''
+        print("##### Metastable states info #####")
         self.load_bin_arrays()
         self.load_names()
         a = self.mstable_assignments

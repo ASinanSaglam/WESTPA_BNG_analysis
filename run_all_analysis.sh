@@ -5,8 +5,10 @@ fi
 if [ ! -e west.h5 ];then
   ln -s ../west.h5 .
 fi
+
 # First check the probability distributions
-#python highdimplotter.py -W west.h5 --name-file full_names.txt -o pdists.png --smooth-data 0.25 
+python highdimplotter.py -W west.h5 --name-file full_names.txt -o pdists.png --smooth-data 0.25 
+
 # TODO: We are going to need an equivalent tool to hdimplotter that does time evolution for checking
 # steady state stuff! 
 
@@ -15,12 +17,13 @@ fi
 
 # Second let's do PCCA+ and get some states
 ## assignment first, need to assign to original voronoi bins
-#w_assign -W west.h5 --states-from-file states.yaml || exit 1
-#mv assign.h5 assign_voronoi.h5
+w_assign -W west.h5 --states-from-file states.yaml || exit 1
+mv assign.h5 assign_voronoi.h5
 ## then we need to calculate transition matrix
 python transMatCalculator.py -W west.h5 -A assign_voronoi.h5 -o tm.npy || exit 1
 ## use PCCA+ to get the coarse grained system
-python clusterer.py -TM tm.npy -A assign_voronoi.h5 --pcca-count 2 --name-file full_names.txt || exit 1
+COUNT=$1
+python clusterer.py -TM tm.npy -A assign_voronoi.h5 --pcca-count $COUNT --name-file full_names.txt || exit 1
 
 # TODO: How to do halton seq stuff in this setup here?
 
