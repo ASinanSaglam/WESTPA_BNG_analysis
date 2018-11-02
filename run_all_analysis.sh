@@ -9,8 +9,8 @@ fi
 # First check the probability distributions
 python highdimplotter.py -W west.h5 --name-file full_names.txt -o pdists.png --smooth-data 0.25 
 
-# TODO: We are going to need an equivalent tool to hdimplotter that does time evolution for checking
-# steady state stuff! 
+# Check steady state for each dimension
+python evoPlotter.py -W west.h5 --name-file full_names.txt -o evolution.png
 
 # TODO: We need a setup to find out our number of states!! Now is the time to implement a tool
 # for general clustering/dimensionality reduction techniques e.g. PCA
@@ -26,6 +26,7 @@ COUNT=$1
 python clusterer.py -TM tm.npy -A assign_voronoi.h5 --pcca-count $COUNT --name-file full_names.txt || exit 1
 
 # TODO: How to do halton seq stuff in this setup here?
+# TODO: How to deal with making networks?
 
 ## OLD STUFF ## 
 ## Get the pdist h5
