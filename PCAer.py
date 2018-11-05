@@ -13,9 +13,6 @@ from sklearn.decomposition import PCA
 import warnings 
 warnings.filterwarnings("ignore")
 
-# TODO: Separate out the pdisting, use native code
-# TODO: Hook into native code to decouple some parts like # of dimensions etc.
-# we need the system.py anyway, let's use native code to read CFG file
 class WEPCAer:
     def __init__(self):
         # Let's parse cmdline arguments
@@ -147,12 +144,19 @@ class WEPCAer:
 
         return iiter, fiter 
 
+    def _calc_row_cols(self):
+        num_figs = int(((self.dims * self.dims) - self.dims)/2)
+        sq = int(np.ceil(np.sqrt(num_figs)))
+        num_cols, num_rows = int(np.ceil(num_figs/float(sq))), sq
+        return num_rows, num_cols
+
+
     def setup_figure(self):
         # Setup the figure and names for each dimension
-        num_figs = ((self.dims * self.dims) - self.dims)/2
         plt.figure(figsize=(1.5,1.5))
-        f, axarr = plt.subplots(self.dims,2)
-        f.subplots_adjust(hspace=0.4, wspace=0.4, bottom=0.05, left=0.05, top=0.98, right=0.98)
+        r, c = self._calc_row_cols()
+        f, axarr = plt.subplots(r,c)
+        f.subplots_adjust(hspace=0.4, wspace=0.4, bottom=0.05, left=0.05, top=0.97, right=0.98)
         return f, axarr
 
     def save_fig(self, dims=None):
@@ -231,6 +235,8 @@ class WEPCAer:
     def plot_all(self):
         # Get figure
         f, axarr = self.setup_figure()
+        r, c = self._calc_row_cols()
+        print("figure has {} rows and {} cols".format(r,c))
 
         # Setup the color map
         cmap = mpl.cm.magma_r
@@ -242,25 +248,37 @@ class WEPCAer:
         ts = self.test_data
         tw = self.test_weights
         
+        ctr = 0
         for i in range(self.dims):
             for j in range(i,self.dims):
                 if i != j:
-
                     # Get the histogram
                     # TODO: Expose bin count to the command line
-                    H, xedges, yedges = np.histogram2d(ts[:,i], ts[:,j], bins=50, weights=self.tw)
+                    H, xedges, yedges = np.histogram2d(ts[:,i], ts[:,j], bins=50, weights=tw)
                     H = H/H.sum()
+                    if self.data_smoothing_level is not None:
+                        H = scipy.ndimage.filters.gaussian_filter(H,
+                                          self.data_smoothing_level)
                     if self.do_energy:
                         H = -np.log(H)
                         H = H - H.min()
                     
                     # Plot Histogram
                     X, Y = np.meshgrid(xedges, yedges)
-                    axarr[i,j].pcolormesh(X, Y, H, cmap=cmap, vmin=1e-10)
+                    # figure out the fig indices
+                    fi, fj = ctr/c, ctr%c
+                    ctr += 1
+                    axarr[fi,fj].set(adjustable='box-forced')
+                    axarr[fi,fj].set_title("{} vs {}".format(i,j), fontdict={'fontsize':6, 'verticalalignment':'top'})
+                    axarr[fi,fj].pcolormesh(X, Y, H, cmap=cmap, vmin=1e-10)
 
                     # Set some stuff up
-                    plt.xlabel("PC #{}".format(i))
-                    plt.ylabel("PC #{}".format(j))
+                    #plt.xlabel("PC #{}".format(i))
+                    #plt.ylabel("PC #{}".format(j))
+        for i in range(0,c):
+            plt.setp([a.get_yticklabels() for a in axarr[:,i]], visible=False)
+        for i in range(0,r):
+            plt.setp([a.get_xticklabels() for a in axarr[i,:]], visible=False)
 
         # Save figure
         self.save_fig()

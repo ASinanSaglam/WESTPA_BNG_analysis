@@ -12,10 +12,10 @@ python highdimplotter.py -W west.h5 --name-file full_names.txt -o pdists.png --s
 # Check steady state for each dimension
 python evoPlotter.py -W west.h5 --name-file full_names.txt -o evolution.png
 
-# TODO: We need a setup to find out our number of states!! Now is the time to implement a tool
-# for general clustering/dimensionality reduction techniques e.g. PCA
+# Do a PCA to figure out the number of states
+python PCAer.py -W west.h5 --name-file full_names.txt --first-iter 100 --last-iter 200
 
-# Second let's do PCCA+ and get some states
+# now let's do PCCA+ and get some states
 ## assignment first, need to assign to original voronoi bins
 w_assign -W west.h5 --states-from-file states.yaml || exit 1
 mv assign.h5 assign_voronoi.h5
