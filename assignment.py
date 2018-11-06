@@ -88,14 +88,16 @@ def assign_voronoi():
     print("Pulling the latest bin mapper")
     import h5py
     h = h5py.File('west.h5','r')
-    mapper = load_mapper(h, 100)
+    i = h.attrs['west_current_iteration'] - 1
+    mapper = load_mapper(h, i)
     return mapper
 
 def assign_pcca():
     print("making the wrapped clusterer")
     import h5py
     h = h5py.File('west.h5','r')
-    mapper = load_mapper(h, 100)
+    i = h.attrs['west_current_iteration'] - 1
+    mapper = load_mapper(h, i)
     WClusterer = wrapped_mapper(mapper)
     WClusterer.load_pcca_labels('/home/monoid/PROJECTS/PLURI_12GENE/001/analysis/metasble_assignments.pkl')
     return WClusterer
@@ -106,7 +108,8 @@ def assign_halton():
     print("getting halton centers")
     import h5py
     h = h5py.File('west.h5','r')
-    mapper = load_mapper(h, 100)
+    i = h.attrs['west_current_iteration'] - 1
+    mapper = load_mapper(h, i)
     seq = gh.Halton(mapper.centers.shape[1])
     s = np.array(seq.get(mapper.centers.shape[0]))
     for i in range(mapper.centers.shape[1]):

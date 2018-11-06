@@ -176,11 +176,11 @@ class WEPCAer:
         all_pcoords = None
         all_weights = None
         for it in range(self.iiter, self.fiter):
-            weights = self.h5file['iterations/iter_{:08d}'.format(it)]['seg_index']['weight'][...]
+            weights = self.h5file['iterations/iter_{:08d}'.format(it+1)]['seg_index']['weight'][...]
 
             # Not sure about the best way to PCA a WE simulation
             # at the moment I'll be pulling a single data point per iteration
-            pcoord = self.h5file['iterations/iter_%08d'%it]['pcoord'][:,-1,:]
+            pcoord = self.h5file['iterations/iter_{:08d}'.format(it+1)]['pcoord'][:,-1,:]
             a,c = pcoord.shape[0], pcoord.shape[1]
 
             # Uncomment if you want all pcoords

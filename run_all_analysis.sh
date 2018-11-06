@@ -13,7 +13,7 @@ python highdimplotter.py -W west.h5 --name-file full_names.txt -o pdists.png --s
 python evoPlotter.py -W west.h5 --name-file full_names.txt -o evolution.png
 
 # Do a PCA to figure out the number of states
-python PCAer.py -W west.h5 --name-file full_names.txt --first-iter 100 --last-iter 200
+python PCAer.py -W west.h5 --name-file full_names.txt
 
 # now let's do PCCA+ and get some states
 ## assignment first, need to assign to original voronoi bins
