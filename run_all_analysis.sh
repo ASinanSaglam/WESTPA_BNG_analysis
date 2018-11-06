@@ -25,6 +25,8 @@ python transMatCalculator.py -W west.h5 -A assign_voronoi.h5 -o tm.npy || exit 1
 COUNT=$1
 python clusterer.py -TM tm.npy -A assign_voronoi.h5 --pcca-count $COUNT --name-file full_names.txt || exit 1
 
+python networker.py 
+
 # TODO: How to do halton seq stuff in this setup here?
 # TODO: How to deal with making networks?
 

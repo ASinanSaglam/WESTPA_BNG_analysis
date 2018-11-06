@@ -115,6 +115,11 @@ class WEClusterer:
         self.max_mstable_states = self.mstable_assignments.max()
         self.print_pcca_results()
 
+    def save_pcca(self):
+        f = open("pcca.pkl", 'w')
+        pickle.dump(self.pcca, f)
+        f.close()
+
     def load_names(self):
         '''
         '''
@@ -202,55 +207,10 @@ class WEClusterer:
         '''
         '''
         self.cluster()
+        self.save_pcca()
         self.get_mstable_assignments()
 
 
 if __name__ == '__main__':
     c = WEClusterer()
     c.run()
-
-sys.exit()
-
-# TODO: MOVE GRAPHS TO ANOTHER TOOL
-state_labels = {0: "loGBX", 1: "loKLF4", 2: "t1", 3:"t2"}
-state_colors = {0: "#FF00FF", 1: "#000000", 2: "#FF0000", 3:"#0000FF"}
-tm = pcca.transition_matrix
-node_sizes = pcca.stationary_probability*1000
-edge_sizes = tm
-
-G = nx.DiGraph()
-for i in range(tm.shape[0]):
-    if node_sizes[i] > 0:
-        G.add_node(i, weight=float(node_sizes[i]), color=state_colors[metastab_ass[i]], LabelGraphics={"text": " "}, #)
-               graphics={"type": "circle", "fill": state_colors[metastab_ass[i]], "w": node_sizes[i], "h": node_sizes[i]})
-
-for i in range(tm.shape[0]):
-    for j in range(tm.shape[1]):
-        if i != j:
-            #if edge_sizes[i][j] > 1e-2:
-            if edge_sizes[i][j] > 0:
-                G.add_edge(i, j, weight=float(edge_sizes[i][j]), graphics={"type": "arc", "targetArrow": "none", "fill": state_colors[metastab_ass[i]]})
-
-nx.write_gml(G, "pcca_full.gml")
-
-tm = pcca.coarse_grained_transition_matrix
-node_sizes = pcca.coarse_grained_stationary_probability*1000
-edge_sizes = tm
-print("coarse tm")
-print(edge_sizes)
-print("coarse probs")
-print(pcca.coarse_grained_stationary_probability)
-
-G = nx.DiGraph()
-for i in range(tm.shape[0]):
-    if node_sizes[i] > 0:
-        G.add_node(i, weight=float(node_sizes[i]), color=state_colors[i], LabelGraphics={"text": " "}, #)
-               graphics={"type": "circle", "fill": state_colors[i], "w": node_sizes[i], "h": node_sizes[i]})
-
-for i in range(tm.shape[0]):
-    for j in range(tm.shape[1]):
-        if i != j:
-            if edge_sizes[i][j] > 0:
-                G.add_edge(i, j, weight=float(edge_sizes[i][j]), graphics={"type": "arc", "targetArrow": "none", "fill": state_colors[i]})
-
-nx.write_gml(G, "pcca_coarse.gml")
