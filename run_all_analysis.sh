@@ -29,11 +29,9 @@ python clusterer.py -TM tm.npy -A assign_voronoi.h5 --pcca-count $COUNT --name-f
 python networker.py -PCCA pcca.pkl --mstab-file metasble_assignments.pkl --state-labels state_labels.txt
 
 # TODO: How to do halton seq stuff in this setup here?
-
 # Let's reanalyze with halton seq
-#w_assign -W $WESTH5_FILE --states-from-file states_8dims.yaml --bins-from-function assignment.assign_halton || exit 1
-#mv assign.h5 assign_halton.h5
-#python make_transMat.py $WESTH5_FILE assign_halton.h5 halton_tm.npy || exit 1
-#python make_pcca_halton.py halton_tm.npy assign_halton.h5 4 || exit 1
-#python weighted_ensemble_tools/free_energy_contour_plotter.py --pdist-input pdist_1_2.h5 --first-iter 500 --xlabel "Protein A" --ylabel "Protein B" --xrange "(0,30)" --yrange "(0,30)" --plot-mode contourf_l --output a_b_vor_halt.png --pdist-axes "(0,1)" --cmap "magma_r" --zmax 10 --zmin 0 --zbins 10 --postprocess plotting.func_halt --smooth-data 1 --smooth-curves 1
-#python weighted_ensemble_tools/free_energy_contour_plotter.py --pdist-input pdist_1_2.h5 --first-iter 500 --xlabel "Protein A" --ylabel "Protein B" --xrange "(0,30)" --yrange "(0,30)" --plot-mode contourf_l --output a_b_clust_halt.png --pdist-axes "(0,1)" --cmap "magma_r" --zmax 10 --zmin 0 --zbins 10 --postprocess plotting.func_ass_halt --smooth-data 1 --smooth-curves 1
+w_assign -W west.h5 --states-from-file states.yaml --bins-from-function assignment.assign_halton || exit 1
+mv assign.h5 assign_halton.h5
+python transMatCalculator.py -W west.h5 -A assign_halton.h5 -o tm_halton.npy || exit 1
+python clusterer.py -TM tm_halton.npy -A assign_halton.h5 --mstab-file mstab_halton.pkl \
+                    --pcca-count $COUNT --name-file full_names.txt --halton-centers halton_centers.npy || exit 1

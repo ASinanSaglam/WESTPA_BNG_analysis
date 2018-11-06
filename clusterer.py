@@ -26,6 +26,8 @@ class WEClusterer:
         self.symmetrize = self.args.symmetrize
         # name file 
         self.name_path = self.args.name_path
+        # halton centers
+        self.halton_centers = self.args.halton_centers
 
     def _parse_args(self):
         parser = argparse.ArgumentParser()
@@ -64,6 +66,12 @@ class WEClusterer:
                             dest='name_path',
                             default=None,
                             help='Text file containing the names of each dimension separated by spaces',
+                            type=str)
+        
+        parser.add_argument('--halton-centers',
+                            dest='halton_centers',
+                            default=None,
+                            help='np.load\'able file for custom halton centers rather than the mapper centers',
                             type=str)
 
         self.args = parser.parse_args()
@@ -177,7 +185,10 @@ class WEClusterer:
         '''
         '''
         print("##### Metastable states info #####")
-        self.load_bin_arrays()
+        if self.halton_centers is None:
+            self.load_bin_arrays()
+        else:
+            self.bin_labels = np.load(self.halton_centers)[self.nz_inds]
         self.load_names()
         a = self.mstable_assignments
         # TODO: OBJify

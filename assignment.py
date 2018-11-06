@@ -86,13 +86,16 @@ def load_mapper(h, iter_no):
 
 def assign_voronoi():
     print("Pulling the latest bin mapper")
-    #mapper = load_mapper("west.h5.1529", 500)
-    mapper = load_mapper('../west.h5', 100)
+    import h5py
+    h = h5py.File('west.h5','r')
+    mapper = load_mapper(h, 100)
     return mapper
 
 def assign_pcca():
     print("making the wrapped clusterer")
-    mapper = load_mapper('../west.h5', 100)
+    import h5py
+    h = h5py.File('west.h5','r')
+    mapper = load_mapper(h, 100)
     WClusterer = wrapped_mapper(mapper)
     WClusterer.load_pcca_labels('/home/monoid/PROJECTS/PLURI_12GENE/001/analysis/metasble_assignments.pkl')
     return WClusterer
@@ -101,20 +104,13 @@ def assign_halton():
     import matplotlib.pyplot as plt
     import ghalton as gh
     print("getting halton centers")
-    mapper = load_mapper('../west.h5', 100)
+    import h5py
+    h = h5py.File('west.h5','r')
+    mapper = load_mapper(h, 100)
     seq = gh.Halton(mapper.centers.shape[1])
     s = np.array(seq.get(mapper.centers.shape[0]))
     for i in range(mapper.centers.shape[1]):
         s[:,i] = s[:,i] * (mapper.centers[:,i].max())
-    # plot test
-    plt.plot(s[:,0], s[:,1], lw=0, marker="o", c="r", label="hcenters")
-    plt.plot(mapper.centers[:,0], mapper.centers[:,1], lw=0, marker="+", c="k", label="map centers")
-    plt.legend(frameon=False)
-    plt.savefig("map_test.png")
-    plt.close()
-    print(s, mapper.centers)
-    print(s[:,0].min(), s[:,1].max())
-    print(mapper.centers[:,0].min(), mapper.centers[:,1].max())
     np.save("halton_centers.npy", s)
     # done plotting
     mapper.centers = s
