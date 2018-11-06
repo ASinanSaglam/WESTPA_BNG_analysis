@@ -8,20 +8,20 @@ import warnings
 warnings.filterwarnings("ignore")
 np.set_printoptions(precision=2)
 
-class WEClusterer:
+class PCCANetworker:
     def __init__(self):
         # Get arguments as usual
         self._parse_args()
         # Parse and set the arguments
         # Open files 
-        self.pcca = self._load_pickle(f)
+        self.pcca = self._load_pickle(self.args.pcca_pickle)
         self.full_tm = self.pcca.transition_matrix
         self.coarse_tm = self.pcca.transition_matrix
         # Set mstable file to load 
         self.mstabs = self._load_pickle(self.args.mstab_file)
         # name file 
         self.state_labels = self._load_state_labels(self.args.state_labels)
-        self.set_state_dicts()
+        self._set_state_dicts()
 
     def _parse_args(self):
         parser = argparse.ArgumentParser()
@@ -35,7 +35,7 @@ class WEClusterer:
 
         parser.add_argument('--mstab-file',
                             dest='mstab_file',
-                            default=None,
+                            default='metasble_assignments.pkl',
                             help='File to load metastable assignments from',
                             type=str)
 
@@ -53,7 +53,7 @@ class WEClusterer:
         f.close()
         return l
 
-    def _load_state_label(self, slfile):
+    def _load_state_labels(self, slfile):
         '''
         '''
         if slfile is not None:
@@ -73,16 +73,15 @@ class WEClusterer:
         return
 
     def get_full_network(self):
-
-        tm = pcca.transition_matrix
-        node_sizes = pcca.stationary_probability*1000
-        edge_sizes = tm
+        node_sizes = self.pcca.stationary_probability*1000
+        edge_sizes = self.pcca.transition_matrix
+        tm = edge_sizes
 
         G = nx.DiGraph()
         for i in range(tm.shape[0]):
             if node_sizes[i] > 0:
-                G.add_node(i, weight=float(node_sizes[i]), color=state_colors[metastab_ass[i]], 
-                        LabelGraphics={"text": " "}, graphics={"type": "circle", "fill": state_colors[metastab_ass[i]], 
+                G.add_node(i, weight=float(node_sizes[i]), color=self.state_colors[self.mstabs[i]], 
+                        LabelGraphics={"text": " "}, graphics={"type": "circle", "fill": self.state_colors[self.mstabs[i]], 
                                                                "w": node_sizes[i], "h": node_sizes[i]})
         
         for i in range(tm.shape[0]):
@@ -92,25 +91,22 @@ class WEClusterer:
                     if edge_sizes[i][j] > 0:
                         G.add_edge(i, j, weight=float(edge_sizes[i][j]), 
                                    graphics={"type": "arc", 
-                                       "targetArrow": "none", "fill": state_colors[metastab_ass[i]]})
+                                       "targetArrow": "none", "fill": self.state_colors[self.mstabs[i]]})
         
-        nx.write_gml(G, "pcca_full.gml")
+        self.network = G
+        self.curr_network_ext = "full"
         return
 
     def get_coarse_network(self):
-        tm = pcca.coarse_grained_transition_matrix
-        node_sizes = pcca.coarse_grained_stationary_probability*1000
-        edge_sizes = tm
-        print("coarse tm")
-        print(edge_sizes)
-        print("coarse probs")
-        print(pcca.coarse_grained_stationary_probability)
+        node_sizes = self.pcca.coarse_grained_stationary_probability*1000
+        edge_sizes = self.pcca.coarse_grained_transition_matrix
+        tm = edge_sizes
         
         G = nx.DiGraph()
         for i in range(tm.shape[0]):
             if node_sizes[i] > 0:
-                G.add_node(i, weight=float(node_sizes[i]), color=state_colors[i], LabelGraphics={"text": " "}, #)
-                       graphics={"type": "circle", "fill": state_colors[i], "w": node_sizes[i], "h": node_sizes[i]})
+                G.add_node(i, weight=float(node_sizes[i]), color=self.state_colors[i], LabelGraphics={"text": " "}, #)
+                       graphics={"type": "circle", "fill": self.state_colors[i], "w": node_sizes[i], "h": node_sizes[i]})
         
         for i in range(tm.shape[0]):
             for j in range(tm.shape[1]):
@@ -118,9 +114,14 @@ class WEClusterer:
                     if edge_sizes[i][j] > 0:
                         G.add_edge(i, j, weight=float(edge_sizes[i][j]), 
                                    graphics={"type": "arc", "targetArrow": "none", 
-                                             "fill": state_colors[i]})
+                                             "fill": self.state_colors[i]})
         
-        nx.write_gml(G, "pcca_coarse.gml")
+        self.network = G
+        self.curr_network_ext = "coarse"
+        return
+
+    def save_network(self):
+        nx.write_gml(self.network, "pcca_{}.gml".format(self.curr_network_ext))
         return
 
     def run(self):
@@ -133,5 +134,5 @@ class WEClusterer:
 
 
 if __name__ == '__main__':
-    n = Networker()
+    n = PCCANetworker()
     n.run()
