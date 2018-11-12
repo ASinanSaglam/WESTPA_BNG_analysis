@@ -140,6 +140,22 @@ class WEClusterer:
         else:
             self.names = [str(i) for i in range(self.bin_labels.shape[1])]
 
+    def _load_custom_centers(self, centers, nz_inds=None):
+        '''
+        '''
+        print("loading custom centers")
+        if nz_inds is not None:
+            ccenters = np.load(centers)[self.nz_inds]
+        else:
+            ccenters = np.load(centers)
+        for i in range(ccenters.shape[1]):
+            ccenters[:,i] = ccenters[:,i] - ccenters[:,i].min()
+            ccenters[:,i] = ccenters[:,i]/ccenters[:,i].max()
+        ccenters *= 100
+        print("custom centers loaded")
+        print(ccenters)
+        return ccenters
+
     def load_bin_arrays(self):
         '''
         '''
@@ -188,7 +204,7 @@ class WEClusterer:
         if self.halton_centers is None:
             self.load_bin_arrays()
         else:
-            self.bin_labels = np.load(self.halton_centers)[self.nz_inds]
+            self.bin_labels = self._load_custom_centers(self.halton_centers, nz_inds=self.nz_inds)
         self.load_names()
         a = self.mstable_assignments
         # TODO: OBJify
