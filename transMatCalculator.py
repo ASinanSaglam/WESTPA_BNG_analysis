@@ -2,7 +2,6 @@ import h5py, sys, argparse
 import numpy as np
 np.set_printoptions(precision=3)
 
-# TODO: Add logic to check assignment file and make sure it's up to date
 # TODO: Add logic to build an assingment file if it's not there?
 class TransMatCalculator:
     def __init__(self):
@@ -19,6 +18,12 @@ class TransMatCalculator:
         # Set range
         self.first_iter = self.args.first_iter
         self.last_iter = self.args.last_iter
+        # make sure assignments cover the range
+        hstop_iter = self.assignments.attrs['iter_stop']
+        if self.last_iter > hstop_iter:
+            sys.exit("The assignment file (up to {}) doesn't cover"
+            " the requested range of up to iteration {}".format(\
+            hstop_iter, self.last_iter))
 
     def _parse_args(self):
         '''
@@ -38,7 +43,7 @@ class TransMatCalculator:
                             type=str)
         parser.add_argument('-o', '--outname', default=None,
                           dest='outname',
-                          help='Name of the output h5 file',
+                          help='Name of the output numpy binary file',
                           type=str)
         # Averaging window
         parser.add_argument('--first-iter', default=None,
