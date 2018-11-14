@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 import pyemma as pe 
 
+#TODO: Turn into WESTPA tool
 # Hacky way to ignore warnings, in particular pyemma insists on Python3
 import warnings
 warnings.filterwarnings("ignore")
