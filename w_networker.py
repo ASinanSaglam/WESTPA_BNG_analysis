@@ -84,6 +84,8 @@ Command-line arguments
         f = open(fname, 'r')
         tm = pickle.load(f)
         f.close()
+        # TODO: Get probabilities and return for 
+        # eventual graph node sizes
         return tm
 
     def _load_from_h5(self, fname, istart, istop):
@@ -165,6 +167,7 @@ Command-line arguments
                         G.add_edge(i, j, weight=float(edge_sizes[i][j])) 
                     pi.progress += 1
 
+            # TODO: Customize the graph using a user defined function here
             self.save_graph(self.output_filename, G)
 
 if __name__ == '__main__':
