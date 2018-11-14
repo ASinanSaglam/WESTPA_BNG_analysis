@@ -19,7 +19,8 @@ python PCAer.py -W west.h5 --name-file full_names.txt
 ## assignment first, need to assign to original voronoi bins
 w_assign -W west.h5 --states-from-file states.yaml || exit 1
 mv assign.h5 assign_voronoi.h5
-## then we need to calculate transition matrix
+# then we need to calculate transition matrix
+# in the compliant version we'll have w_reweight here
 python transMatCalculator.py -W west.h5 -A assign_voronoi.h5 -o tm.npy || exit 1
 ## use PCCA+ to get the coarse grained system
 COUNT=$1
