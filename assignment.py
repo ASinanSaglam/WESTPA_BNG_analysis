@@ -108,7 +108,7 @@ def assign_halton():
     print("getting halton centers")
     import h5py
     h = h5py.File('west.h5','r')
-    i = h.attrs['west_current_iteration'] - 1
+    i = h.attrs['west_current_iteration']
     mapper = load_mapper(h, i)
     seq = gh.Halton(mapper.centers.shape[1])
     s = np.array(seq.get(mapper.centers.shape[0]))

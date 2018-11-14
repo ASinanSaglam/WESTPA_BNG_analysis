@@ -20,10 +20,10 @@ python PCAer.py -W west.h5 --name-file full_names.txt
 w_assign -W west.h5 --states-from-file states.yaml || exit 1
 mv assign.h5 assign_voronoi.h5
 ## then we need to calculate transition matrix
-python transMatCalculator.py -W west.h5 -A assign_voronoi.h5 -o tm.npy || exit 1
+w_reweight init -W west.h5 -a assign_voronoi.h5 -o tmat.h5 || exit 1
 ## use PCCA+ to get the coarse grained system
 COUNT=$1
-python clusterer.py -TM tm.npy -A assign_voronoi.h5 --pcca-count $COUNT --name-file full_names.txt || exit 1
+python clusterer.py -TM tmat.h5 -A assign_voronoi.h5 --pcca-count $COUNT --name-file full_names.txt || exit 1
 
 # Use the pcca to get GML files to plot networks
 python networker.py -PCCA pcca.pkl --mstab-file metasble_assignments.pkl --state-labels state_labels.txt
@@ -32,6 +32,6 @@ python networker.py -PCCA pcca.pkl --mstab-file metasble_assignments.pkl --state
 # Let's reanalyze with halton seq
 w_assign -W west.h5 --states-from-file states.yaml --bins-from-function assignment.assign_halton || exit 1
 mv assign.h5 assign_halton.h5
-python transMatCalculator.py -W west.h5 -A assign_halton.h5 -o tm_halton.npy || exit 1
-python clusterer.py -TM tm_halton.npy -A assign_halton.h5 --mstab-file mstab_halton.pkl \
+w_reweight init -W west.h5 -a assign_voronoi.h5 -o tmat_halton.h5 || exit 1
+python clusterer.py -TM tmat_halton.h5 -A assign_halton.h5 --mstab-file mstab_halton.pkl \
                     --pcca-count $COUNT --name-file full_names.txt --halton-centers halton_centers.npy || exit 1

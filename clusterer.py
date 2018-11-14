@@ -2,6 +2,7 @@ import pickle, h5py, sys, argparse
 import numpy as np
 import networkx as nx
 import pyemma as pe 
+from scipy.sparse import coo_matrix
 
 # Hacky way to ignore warnings, in particular pyemma insists on Python3
 import warnings
@@ -15,7 +16,7 @@ class WEClusterer:
         # Parse and set the arguments
         # Open files 
         self.assignFile = h5py.File(self.args.assign_path, 'r')
-        self.tm = np.load(self.args.trans_mat_file)
+        self.tm = self._load_trans_mat(self.args.trans_mat_file)
         # Set mstable file to save
         self.mstab_file = self.args.mstab_file
         # Set assignments
@@ -35,10 +36,11 @@ class WEClusterer:
         # Data input options
         parser.add_argument('-TM', '--trans_mat',
                             dest='trans_mat_file',
-                            default="tm.npy",
-                            help='Path to the numpy.loadable file that contains the'
-                            'transition matrix',
+                            default="tmat.h5",
+                            help='Path to the w_reweight output h5 file'
+                            'that contains the transition matrix',
                             type=str)
+
         parser.add_argument('-A', '--assignh5',
                             dest='assign_path',
                             default="assign.h5",
@@ -75,6 +77,40 @@ class WEClusterer:
                             type=str)
 
         self.args = parser.parse_args()
+
+    def _load_trans_mat(self, tmat_file):
+        # Load h5 file
+        tmh5 = h5py.File(tmat_file, 'r')
+        # We will need the number of rows and columns to convert from 
+        # sparse matrix format
+        nrows = tmh5.attrs['nrows']
+        ncols = tmh5.attrs['ncols']
+        # gotta average over iterations
+        tm = None
+        # TODO: Expose the iterations to average over 
+        for it_str in tmh5['iterations']:
+            col = tmh5['iterations'][it_str]['cols']
+            row = tmh5['iterations'][it_str]['rows']
+            flux = tmh5['iterations'][it_str]['flux']
+            ctm = coo_matrix((flux, (row,col)), shape=(nrows, ncols)).toarray()
+            if tm is None:
+                tm = ctm
+            else:
+                tm += ctm
+        # We need to convert the "non-markovian" matrix to 
+        # a markovian matrix here
+        # TODO: support more than 2 states
+        nstates = 2
+        mnrows = nrows/nstates
+        mncols = ncols/nstates
+        mtm = np.zeros((mnrows, mncols), dtype=flux.dtype)
+        for i in range(mnrows):
+            for j in range(mncols):
+                mtm[i,j] = tm[i*2:(i+1)*2,j*2:(j+1)*2].sum()
+        mtm = mtm/len(tmh5['iterations'])
+        print("Averaged transition matrix")
+        print(mtm, mtm.shape)
+        return mtm
 
     def row_normalize(self):
         '''
