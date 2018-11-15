@@ -71,11 +71,11 @@ Command-line arguments
                             help='''Write output to OUTPUT (default: %(default)s).''')
 
         ppgroup = parser.add_argument_group('postprocess options')
-        pproup.add_argument('--postprocess-function',
-                                help='''Names a function (as in module.function) that will be called just prior
-                                to saving the graph. The function will be called as ``postprocess(G, tm, prob)``
-                                where ``G`` is the fully built networkx graph, ``tm`` is the transition matrix
-                                used to build the graph and ``prob`` is the probability distribution used'''
+        ppgroup.add_argument('--postprocess-function',
+                             help='''Names a function (as in module.function) that will be called just prior
+                                  to saving the graph. The function will be called as ``postprocess(G, tm, prob)``
+                                  where ``G`` is the fully built networkx graph, ``tm`` is the transition matrix
+                                  used to build the graph and ``prob`` is the probability distribution used''')
         self.progress.add_args(parser)
 
     def process_args(self, args):
