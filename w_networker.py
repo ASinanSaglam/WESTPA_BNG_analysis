@@ -24,7 +24,7 @@ from scipy.sparse import coo_matrix
 import westpa
 from westpa import h5io
 from west.data_manager import seg_id_dtype, n_iter_dtype, weight_dtype
-from westpa.binning import assignments_list_to_table
+from westpa.extloader import get_object
 
 
 # TODO: Add more documentation
@@ -54,20 +54,28 @@ Command-line arguments
         self.progress = ProgressIndicatorComponent()
         self.output_filename = None
         self.tm_filename = None
+        self.postprocess_function = None
 
     def add_args(self, parser):
         self.data_reader.add_args(parser)
         self.iter_range.add_args(parser)
         
         igroup = parser.add_argument_group('input options')
+        # TODO: Get WESTPA h5 file and add some stuff from it into nodes
         igroup.add_argument('-tm', '--transition-matrix', default='tm.h5',
-                            help='''Use transition matrix from the given'''
-                            '''file, can be either a manually calculated .npy or the '''
+                            help='''Use transition matrix from the'''
                             '''resulting h5 file of w_reweigh (default: %(default)s).''')
 
         ogroup = parser.add_argument_group('output options')
         ogroup.add_argument('-o', '--output', default='network.gml',
                             help='''Write output to OUTPUT (default: %(default)s).''')
+
+        ppgroup = parser.add_argument_group('postprocess options')
+        pproup.add_argument('--postprocess-function',
+                                help='''Names a function (as in module.function) that will be called just prior
+                                to saving the graph. The function will be called as ``postprocess(G, tm, prob)``
+                                where ``G`` is the fully built networkx graph, ``tm`` is the transition matrix
+                                used to build the graph and ``prob`` is the probability distribution used'''
         self.progress.add_args(parser)
 
     def process_args(self, args):
@@ -78,15 +86,8 @@ Command-line arguments
         # Set the attributes according to arguments
         self.output_filename = args.output
         self.tm_filename = args.transition_matrix
-
-    def _load_pickle(self, fname):
-        import pickle
-        f = open(fname, 'r')
-        tm = pickle.load(f)
-        f.close()
-        # TODO: Get probabilities and return for 
-        # eventual graph node sizes
-        return tm
+        if args.postprocess_function:
+            self.postprocess_function = get_object(args.postprocess_function,path=['.'])
 
     def _load_from_h5(self, fname, istart, istop):
         tmh5 = h5py.File(fname, 'r')
@@ -108,7 +109,11 @@ Command-line arguments
                 tm += ctm
         # We need to convert the "non-markovian" matrix to 
         # a markovian matrix here
+
         # TODO: support more than 2 states
+        # Not as straight forward as it seems since there is the 
+        # "unknown" state to deal with and it requires a funky
+        # fix to go from non-markovian to markovian matrix
         nstates = 2
         mnrows = int(nrows/nstates)
         mncols = int(ncols/nstates)
@@ -124,11 +129,11 @@ Command-line arguments
         return mtm, prob
 
     def read_tmfile(self, fname, istart, istop):
-        # Let's allow for a user to just give us a transition matrix
-        if fname.endswith(".npy"):
-            tm, prob = self._load_pickle(fname)
-        elif fname.endswith('.h5'):
+        if fname.endswith('.h5'):
             tm, prob = self._load_from_h5(fname, istart, istop)
+        else:
+            # TODO: error out
+            pass
         return tm, prob
 
     def save_graph(self, outname, graph):
@@ -136,7 +141,7 @@ Command-line arguments
         if outname.endswith(".gml"):
             func = nx.write_gml
         else:
-            # error out
+            # TODO: error out
             pass
         func(graph, outname)
 
@@ -149,8 +154,7 @@ Command-line arguments
         # Start the progress indicator and work on the graph
         pi = self.progress.indicator
         with pi:
-            # Gotta get probs
-            node_sizes = prob*1000
+            node_sizes = prob
             edge_sizes = tm
 
             pi.new_operation('Building graph, adding nodes', extent=len(node_sizes))
@@ -167,7 +171,8 @@ Command-line arguments
                         G.add_edge(i, j, weight=float(edge_sizes[i][j])) 
                     pi.progress += 1
 
-            # TODO: Customize the graph using a user defined function here
+            if self.postprocess_function:
+                self.postprocess_function(G, tm, prob)
             self.save_graph(self.output_filename, G)
 
 if __name__ == '__main__':
