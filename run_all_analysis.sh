@@ -8,7 +8,7 @@ fi
 
 # First check the probability distributions
 echo "### Plotting every prob dist ###"
-python highdimplotter.py -W west.h5 --name-file full_names.txt -o pdists.png --smooth-data 0.25 
+python highdimplotter.py -W west.h5 --name-file full_names.txt -o pdists.png --smooth-data 0.5
 
 # Check steady state for each dimension
 echo "### Plotting prob dist evolutions ###"

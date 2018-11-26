@@ -108,7 +108,7 @@ class WEClusterer:
         if self.fiter is None:
             self.fiter = tmh5.attrs['iter_stop']
 
-        for i in range(self.iiter, self.fiter+1):
+        for i in range(self.iiter, self.fiter):
             it_str = "iter_{:08d}".format(i)
             col = tmh5['iterations'][it_str]['cols']
             row = tmh5['iterations'][it_str]['rows']
@@ -210,7 +210,7 @@ class WEClusterer:
             ccenters[:,i] = ccenters[:,i]/ccenters[:,i].max()
         ccenters *= 100
         print("custom centers loaded")
-        print(ccenters)
+        #print(ccenters)
         return ccenters
 
     def load_bin_arrays(self):

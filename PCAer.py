@@ -157,6 +157,10 @@ class WEPCAer:
         r, c = self._calc_row_cols()
         f, axarr = plt.subplots(r,c)
         f.subplots_adjust(hspace=0.4, wspace=0.4, bottom=0.05, left=0.05, top=0.97, right=0.98)
+        if r == 1:
+            axarr = np.array([axarr])
+            if c == 1:
+                axarr = np.array([axarr])
         return f, axarr
 
     def save_fig(self, dims=None):
