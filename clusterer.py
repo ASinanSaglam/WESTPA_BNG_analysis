@@ -14,6 +14,8 @@ class WEClusterer:
         # Get arguments as usual
         self._parse_args()
         # Parse and set the arguments
+        # iterations
+        self.iiter, self.fiter = self.args.iiter, self.args.fiter
         # Open files 
         self.assignFile = h5py.File(self.args.assign_path, 'r')
         self.tm = self._load_trans_mat(self.args.trans_mat_file)
@@ -76,6 +78,20 @@ class WEClusterer:
                             help='np.load\'able file for custom halton centers rather than the mapper centers',
                             type=str)
 
+        parser.add_argument('--first-iter', default=None,
+                          dest='iiter',
+                          help='Average TM starting from this iteration'
+                               'By default, TM will be averaged starting from the first ' 
+                               'iteration in the specified h5 file. ',
+                          type=int)
+
+        parser.add_argument('--last-iter', default=None,
+                          dest='fiter',
+                          help='Average TM ending in this iteration '
+                               'LAST_ITER. By default, TM will be averaged up to'
+                               'and including the last iteration in the specified h5 file',
+                          type=int)
+
         self.args = parser.parse_args()
 
     def _load_trans_mat(self, tmat_file):
@@ -87,8 +103,13 @@ class WEClusterer:
         ncols = tmh5.attrs['ncols']
         # gotta average over iterations
         tm = None
-        # TODO: Expose the iterations to average over 
-        for it_str in tmh5['iterations']:
+        if self.iiter is None:
+            self.iiter = tmh5.attrs['iter_start']
+        if self.fiter is None:
+            self.fiter = tmh5.attrs['iter_stop']
+
+        for i in range(self.iiter, self.fiter+1):
+            it_str = "iter_{:08d}".format(i)
             col = tmh5['iterations'][it_str]['cols']
             row = tmh5['iterations'][it_str]['rows']
             flux = tmh5['iterations'][it_str]['flux']
