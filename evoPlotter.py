@@ -118,7 +118,7 @@ class evoPlotter:
         if self.outname is not None:
             outname = self.outname
         else:
-            outname = "all_{:05d}_{:05d}.png".format(self.iiter, self.fiter)
+            outname = "all_{:05d}.png".format(self.fiter)
 
         # save the figure
         print("Saving figure to {}".format(outname))
