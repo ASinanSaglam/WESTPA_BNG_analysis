@@ -41,6 +41,7 @@ class evoPlotter:
     def _parse_args(self):
         parser = argparse.ArgumentParser()
 
+        # TODO: Add defaults to help output
         # Data input options
         parser.add_argument('-W', '--westh5',
                             dest='h5file_path',
@@ -111,6 +112,8 @@ class evoPlotter:
         rows = self.dims/2
         f, axarr = plt.subplots(rows,2)
         f.subplots_adjust(hspace=1.2, wspace=0.2, bottom=0.1, left=0.06, top=0.98, right=0.98)
+        if rows == 1:
+            axarr = np.array([axarr])
         return f, axarr
 
     def save_fig(self):
@@ -146,7 +149,7 @@ class evoPlotter:
             f.write("{} {}".format(fdim, self.dims))
             f.close()
             proc = sbpc.Popen(["w_pdist", "-W", "{}".format(self.h5file_path), 
-                       "-o", "{}".format(pfile), "-b", "100", 
+                       "-o", "{}".format(pfile), "-b", "30", 
                        "--construct-dataset", "assignment.pull_data"])
             proc.wait()
             assert proc.returncode == 0, "w_pdist call failed, exiting"
