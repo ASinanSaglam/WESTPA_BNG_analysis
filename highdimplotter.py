@@ -191,7 +191,7 @@ class HighDimPlotter:
             f.write("{} {}".format(fdim, sdim))
             f.close()
             proc = sbpc.Popen(["w_pdist", "-W", "{}".format(self.h5file_path), 
-                       "-o", "{}".format(pfile), "-b", "100", 
+                       "-o", "{}".format(pfile), "-b", "30", 
                        "--construct-dataset", "assignment.pull_data"])
             proc.wait()
             assert proc.returncode == 0, "w_pdist call failed, exiting"

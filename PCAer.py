@@ -217,6 +217,8 @@ class WEPCAer:
         self.pcaer= PCA()
         self.pcaer.fit(self.working_pcoords)
         self.components = self.pcaer.components_
+        print("PCA components were: ")
+        print(self.components)
         return
 
     def get_test_data(self, numpts=10000):
