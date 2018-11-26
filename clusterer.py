@@ -229,7 +229,7 @@ class WEClusterer:
             bin_labels[:,i] = bin_labels[:,i]/bin_labels[:,i].max()
         bin_labels *= 100
         print("bin labels loaded")
-        print(bin_labels)
+        #print(bin_labels)
         self.bin_labels = bin_labels
 
     def save_mstable_assignments(self):
