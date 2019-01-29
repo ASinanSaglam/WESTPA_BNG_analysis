@@ -206,8 +206,11 @@ class WEClusterer:
         else:
             ccenters = np.load(centers)
         for i in range(ccenters.shape[1]):
-            ccenters[:,i] = ccenters[:,i] - ccenters[:,i].min()
-            ccenters[:,i] = ccenters[:,i]/ccenters[:,i].max()
+            ccenters_i = ccenters[:,i]
+            imin, imax = ccenters_i.min(), ccenters_i.max()
+            ccenters[:,i] = ccenters[:,i] - imin
+            if imax > 0:
+                ccenters[:,i] = ccenters[:,i]/imax
         ccenters *= 100
         print("custom centers loaded")
         #print(ccenters)
