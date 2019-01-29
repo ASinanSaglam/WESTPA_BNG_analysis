@@ -225,8 +225,10 @@ class WEClusterer:
             bin_labels.append(eval(bstr[st:ed+1]))
         bin_labels = np.array(bin_labels)[self.nz_inds]
         for i in range(bin_labels.shape[1]):
-            bin_labels[:,i] = bin_labels[:,i] - bin_labels[:,i].min()
-            bin_labels[:,i] = bin_labels[:,i]/bin_labels[:,i].max()
+            imin, imax = bin_labels[:,i].min(), bin_labels[:,i].max()
+            bin_labels[:,i] = bin_labels[:,i] - imin
+            if imax > 0:
+                bin_labels[:,i] = bin_labels[:,i]/imax
         bin_labels *= 100
         print("bin labels loaded")
         #print(bin_labels)
