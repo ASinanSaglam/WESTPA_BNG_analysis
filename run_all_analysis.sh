@@ -15,8 +15,8 @@ echo "### Plotting prob dist evolutions ###"
 python evoPlotter.py -W west.h5 --name-file full_names.txt -o evolution.png
 
 # Do a PCA to figure out the number of states
-echo "### Doing PCA ###"
-python PCAer.py -W west.h5 --name-file full_names.txt
+#echo "### Doing PCA ###"
+#python PCAer.py -W west.h5 --name-file full_names.txt
 
 # now let's do PCCA+ and get some states
 ## assignment first, need to assign to original voronoi bins
