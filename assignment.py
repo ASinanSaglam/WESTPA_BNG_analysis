@@ -102,6 +102,13 @@ def assign_pcca():
     WClusterer.load_pcca_labels('/home/monoid/PROJECTS/PLURI_12GENE/001/analysis/metasble_assignments.pkl')
     return WClusterer
 
+def pcca_state(data):
+    # Can use this to assign states if we are using 
+    # pcca bins
+    a = {"label": "a", "coords": [[0,0,0,0,0,0,0,0,0,0,0,0]]}
+    b = {"label": "b", "coords": [[9835,8009,10039,9456,86,379,1102,99,10065,254,1051,9884]]} 
+    return [a,b]
+
 def assign_halton():
     import matplotlib.pyplot as plt
     import ghalton as gh
