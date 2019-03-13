@@ -41,6 +41,8 @@ class HighDimPlotter:
         self.outname = self.args.outname
         # data smoothing
         self.data_smoothing_level = self.args.data_smoothing
+        # data normalization to min/max
+        self.normalize = self.args.normalize
 
     def _parse_args(self):
         parser = argparse.ArgumentParser()
@@ -75,6 +77,10 @@ class HighDimPlotter:
         parser.add_argument('--do-energy',
                             dest='do_energy', action='store_true', default=False,
                             help='Plot -lnP instead of probabilities')
+
+        parser.add_argument('--normalize', '-n',
+                            dest='normalize', action='store_true', default=False,
+                            help='Normalize the data to min/max to be 0/1')
 
         parser.add_argument('--first-iter', default=None,
                           dest='iiter',
@@ -227,7 +233,8 @@ class HighDimPlotter:
             # Check what type of plot we want
             if fi == fj:
                 # Set equal widht height
-                axarr[ii,jj].set(adjustable='box-forced', aspect='equal')
+                if self.normalize:
+                    axarr[ii,jj].set(adjustable='box-forced', aspect='equal')
                 # plotting the diagonal, 1D plots
                 if fi != self.dims:
                     # First pull a file that contains the dimension
@@ -256,15 +263,18 @@ class HighDimPlotter:
                 # Calculate the x values, normalize s.t. it spans 0-1
                 x_bins = datFile['binbounds_0'][...]
                 x_mids = np.array([ (x_bins[i]+x_bins[i+1])/2.0 for i in range(len(x_bins)-1)] )
-                x_mids = x_mids/x_bins.max()
+                if self.normalize:
+                    x_mids = x_mids/x_bins.max()
           
                 # Plot on the correct ax, set x limit
-                axarr[ii,jj].set_xlim(0.0, 1.0)
-                axarr[ii,jj].set_ylim(0.0, 1.0)
+                if self.normalize:
+                    axarr[ii,jj].set_xlim(0.0, 1.0)
+                    axarr[ii,jj].set_ylim(0.0, 1.0)
                 axarr[ii,jj].plot(x_mids, Hists, label="{} {}".format(fi,fj))
             else:
                 # Set equal widht height
-                axarr[ii,jj].set(adjustable='box-forced', aspect='equal')
+                if self.normalize:
+                    axarr[ii,jj].set(adjustable='box-forced', aspect='equal')
                 # Plotting off-diagonal, plotting 2D heatmaps
                 if fi < fj:
                     datFile = self.open_pdist_file(fi, fj)
@@ -296,10 +306,14 @@ class HighDimPlotter:
                 # Get x/y bins, normalize them to 1 max
                 x_bins = datFile['binbounds_0'][...]
                 x_max = x_bins.max()
-                x_bins = x_bins/x_max
+                if self.normalize:
+                    if x_max != 0:
+                        x_bins = x_bins/x_max
                 y_bins = datFile['binbounds_1'][...]
                 y_max = y_bins.max()
-                y_bins = y_bins/y_max
+                if self.normalize:
+                    if y_max != 0:
+                        y_bins = y_bins/y_max
 
                 # If we are at the other side of the diagonal line
                 if not inv:
@@ -313,8 +327,9 @@ class HighDimPlotter:
                 cmap.set_under(color='white')
 
                 # Set x/y limits
-                axarr[ii,jj].set_xlim(0.0, 1.0)
-                axarr[ii,jj].set_ylim(0.0, 1.0)
+                if self.normalize:
+                    axarr[ii,jj].set_xlim(0.0, 1.0)
+                    axarr[ii,jj].set_ylim(0.0, 1.0)
                 
                 # Plot the heatmap
                 pcolormesh = axarr[ii,jj].pcolormesh(x_bins, y_bins,
@@ -327,8 +342,12 @@ class HighDimPlotter:
                     Y = self.mapper.centers[:,jj]
 
                     # Normalize to 1
-                    X = X/x_max
-                    Y = Y/y_max
+                    if not inv:
+                        X = X/x_max
+                        Y = Y/y_max
+                    else:
+                        X = X/y_max
+                        Y = Y/x_max
 
                     # Ensure not all X/Y values are 0
                     if not ((X==0).all() or (Y==0).all()):
