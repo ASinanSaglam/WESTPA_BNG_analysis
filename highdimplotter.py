@@ -342,12 +342,13 @@ class HighDimPlotter:
                     Y = self.mapper.centers[:,jj]
 
                     # Normalize to 1
-                    if not inv:
-                        X = X/x_max
-                        Y = Y/y_max
-                    else:
-                        X = X/y_max
-                        Y = Y/x_max
+                    if self.normalize:
+                        if not inv:
+                            X = X/x_max
+                            Y = Y/y_max
+                        else:
+                            X = X/y_max
+                            Y = Y/x_max
 
                     # Ensure not all X/Y values are 0
                     if not ((X==0).all() or (Y==0).all()):
